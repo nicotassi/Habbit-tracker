@@ -2,7 +2,11 @@
 
 App web (PWA, instalable y offline) para trackear hábitos sin límite, registrar tu estado de ánimo y analizar tu avance. Estética cálida y minimalista: fondo crema, tipografía serif, tarjetas suaves y modo oscuro.
 
-## Cómo usarla
+## Abrirla
+
+**https://nicotassi.github.io/Habbit-tracker/** — en el celular, abrila en el navegador y elegí “Agregar a pantalla de inicio” para instalarla como app. Cada push a la rama principal la republica automáticamente (`.github/workflows/deploy.yml`).
+
+## Desarrollo local
 
 ```bash
 npm install
