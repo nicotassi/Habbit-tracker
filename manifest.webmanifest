@@ -1,0 +1,9 @@
+{
+  "name": "Ritmo — Hábitos y ánimo",
+  "short_name": "Ritmo",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#1c1b19",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
