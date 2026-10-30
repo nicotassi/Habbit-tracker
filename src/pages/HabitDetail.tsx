@@ -93,9 +93,9 @@ export function HabitDetail({ id }: { id: string }) {
       <div className="grid g3">
         <div className="card span3">
           <div className="card-head">
-            <div><h3 className="h3">Año en un vistazo</h3><span className="sub">Cada cuadrado es un día</span></div>
+            <div><h3 className="h3">Año en un vistazo</h3><span className="sub">Cada cuadrado es un día · tocá uno para editarlo</span></div>
           </div>
-          <Heatmap weeks={53} color={h.color} weekStart={ws} values={(d) => (d < h.createdAt ? null : isScheduled(h, d) || entryOf(data.logs, d, h.id) ? progressOf(h, entryOf(data.logs, d, h.id)) : null)} />
+          <Heatmap weeks={53} color={h.color} weekStart={ws} onPick={(d) => navigate(`calendar/${d}`)} values={(d) => (d < h.createdAt ? null : isScheduled(h, d) || entryOf(data.logs, d, h.id) ? progressOf(h, entryOf(data.logs, d, h.id)) : null)} />
         </div>
 
         <div className="card span2">

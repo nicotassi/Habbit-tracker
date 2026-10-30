@@ -42,7 +42,7 @@ export function MoodLogger({ date, compact }: { date: string; compact?: boolean 
         ))}
       </div>
       {compact && mood && !open && (
-        <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => setOpen(true)}>+ Energía, estrés, sueño, emociones, notas…</button>
+        <button className="btn ghost sm" style={{ alignSelf: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }} onClick={() => setOpen(true)}>+ Energía, estrés, sueño, emociones, notas…</button>
       )}
       {open && mood && (
         <>

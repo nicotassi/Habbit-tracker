@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react';
 export function navigate(path: string) {
   const [name, ...rest] = path.replace(/^\/+/, '').split('/');
   window.location.hash = rest.length ? `${name}-${rest.join('-')}` : name;
+  scrollToTop();
+}
+
+/** En celular el contenido scrollea dentro de <main>; en escritorio, la ventana. */
+export function scrollToTop() {
   window.scrollTo({ top: 0 });
+  document.querySelector('.main')?.scrollTo({ top: 0 });
 }
 
 export function useRoute(): string[] {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Habit } from '../lib/types';
 import { useStore, getData } from '../lib/store';
 import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../lib/stats';
-import { addDays, weekStartOf } from '../lib/date';
+import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
 import { askText, chime, confetti, toast } from './ui';
 import { navigate } from '../router';
 
@@ -27,16 +27,24 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const logs = useStore((s) => s.logs);
   const weekStart = useStore((s) => s.settings.weekStart);
   const setEntry = useStore((s) => s.setEntry);
+  const updateHabit = useStore((s) => s.updateHabit);
   const [menu, setMenu] = useState(false);
   const e = entryOf(logs, date, h.id);
   const done = isDone(h, e, date);
   const prog = progressOf(h, e);
   const st = streaks(h, logs, weekStart, date);
   const value = e?.value ?? 0;
+  const beforeStart = date < h.createdAt;
+  // al cargar un día pasado, la hora queda dentro de ese día (para el gráfico de horarios)
+  const stamp = () => {
+    if (date === todayKey()) return undefined;
+    const now = new Date();
+    return fromKey(date).getTime() + (now.getHours() * 60 + now.getMinutes()) * 60000;
+  };
 
   const commit = (v: number, el: HTMLElement | null) => {
     const wasDone = done;
-    setEntry(date, h.id, v <= 0 && !e?.note ? null : { ...e, value: Math.max(0, v), skipped: false });
+    setEntry(date, h.id, v <= 0 && !e?.note ? null : { ...e, value: Math.max(0, v), skipped: false, at: e?.at ?? stamp() });
     const nowDone = h.kind === 'check' ? v >= 1 : v >= h.target;
     if (!wasDone && nowDone) celebrate(el, date);
   };
@@ -56,7 +64,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
         <div className="habit-name">{h.name}</div>
         <div className="habit-meta">
           {st.current > 0 && <span>🔥 {st.current} {st.unit}</span>}
-          {h.kind === 'avoid' && <span>{done ? 'Día limpio' : 'Recaída registrada'}</span>}
+          {h.kind === 'avoid' && <span>{beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída registrada'}</span>}
           {h.timeOfDay !== 'any' && <span className="hide-mobile">{TOD[h.timeOfDay]}</span>}
           {weekly !== null && h.frequency.type === 'perWeek' && (
             <span className="row" style={{ gap: 6 }}>
@@ -93,7 +101,14 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
         </button>
       )}
 
-      {h.kind === 'avoid' && (
+      {h.kind === 'avoid' && beforeStart && !e && (
+        <div className="row" style={{ gap: 4 }}>
+          <button className="btn sm" onClick={() => { updateHabit(h.id, { createdAt: date }); toast('Día limpio registrado', '✨'); }}>Limpio</button>
+          <button className="btn sm" onClick={() => setEntry(date, h.id, { value: 1 })}>Recaí</button>
+        </div>
+      )}
+
+      {h.kind === 'avoid' && !(beforeStart && !e) && (
         <button className="btn sm" style={!done ? { background: 'var(--bad)', color: '#fff', borderColor: 'var(--bad)' } : undefined}
           onClick={() => setEntry(date, h.id, done ? { value: 1 } : null)}>
           {done ? 'Recaí' : 'Deshacer'}

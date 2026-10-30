@@ -13,6 +13,12 @@ export const DEFAULT_SETTINGS: Settings = {
   notifications: false,
   confetti: true,
   sound: true,
+  pomoWork: 25,
+  pomoShort: 5,
+  pomoLong: 15,
+  pomoEvery: 4,
+  pomoGoal: 8,
+  pomoAuto: false,
 };
 
 export const emptyData = (): AppData => ({
@@ -32,7 +38,7 @@ interface Actions {
   updateHabit: (id: string, patch: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   reorderHabits: (ids: string[]) => void;
-  setEntry: (date: string, habitId: string, entry: Entry | null) => void;
+  setEntry: (date: string, habitId: string, entry: (Entry & { at?: number }) | null) => void;
   setMood: (date: string, mood: Partial<MoodEntry>) => void;
   deleteMood: (date: string) => void;
   addFocus: (s: Omit<FocusSession, 'id' | 'at' | 'date'>) => void;
@@ -81,8 +87,11 @@ export const useStore = create<Store>()(
         set((s) => {
           const day = { ...(s.logs[date] ?? {}) };
           if (entry === null) delete day[habitId];
-          else day[habitId] = { ...entry, at: Date.now() };
-          return { logs: { ...s.logs, [date]: day } };
+          else day[habitId] = { ...entry, at: entry.at ?? Date.now() };
+          const habits = entry && s.habits.some((h) => h.id === habitId && date < h.createdAt)
+            ? s.habits.map((h) => (h.id === habitId ? { ...h, createdAt: date } : h))
+            : s.habits;
+          return { logs: { ...s.logs, [date]: day }, habits };
         }),
       setMood: (date, mood) =>
         set((s) => {
@@ -136,6 +145,11 @@ export const useStore = create<Store>()(
     {
       name: 'ritmo-data',
       version: 1,
+      // fusiona ajustes nuevos con los guardados por versiones anteriores
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppData>;
+        return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...p.settings } };
+      },
       partialize: (s) => ({
         version: s.version,
         habits: s.habits,

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
-import { activeHabits, dayStats, insights, isScheduled, levelOf, levelTitle, perfectDayStreak, xpOf } from '../lib/stats';
+import { activeHabits, dayStats, insights, levelOf, matchesDay, levelTitle, perfectDayStreak, xpOf } from '../lib/stats';
 import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_LETTER, weekStartOf } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
-import { Bar, Empty, Ring } from '../components/ui';
+import { Bar, DateNav, Empty, Ring } from '../components/ui';
 import { HabitForm } from '../components/HabitForm';
 import type { TimeOfDay } from '../lib/types';
 import { navigate } from '../router';
@@ -36,8 +36,8 @@ export function Today() {
   const [date, setDate] = useState(todayKey());
   const [formOpen, setFormOpen] = useState(false);
   const [group, setGroup] = useState(true);
-  const habits = activeHabits(data).filter((h) => isScheduled(h, date) || h.createdAt <= date);
-  const scheduled = habits.filter((h) => isScheduled(h, date));
+  const habits = activeHabits(data);
+  const scheduled = habits.filter((h) => matchesDay(h, date));
   const s = dayStats(data, date);
   const xp = xpOf(data);
   const lv = levelOf(xp);
@@ -53,16 +53,21 @@ export function Today() {
         <div>
           <div className="eyebrow">{relativeDay(date)} · {prettyDate(date)}</div>
           <h1 className="title">
-            {isToday ? <>{greeting()}{data.settings.name ? <>, <em>{data.settings.name}</em></> : ''}.</> : <>Mirando <em>{relativeDay(date).toLowerCase()}</em></>}
+            {isToday ? <>{greeting()}{data.settings.name ? <>, <em>{data.settings.name}</em></> : ''}.</> : <>Editando <em>{relativeDay(date) === 'Ayer' ? 'ayer' : prettyDate(date)}</em></>}
           </h1>
         </div>
-        <div className="row">
-          <button className="btn icon" onClick={() => setDate(addDays(date, -1))}>‹</button>
-          {!isToday && <button className="btn sm" onClick={() => setDate(todayKey())}>Hoy</button>}
-          <button className="btn icon" onClick={() => setDate(addDays(date, 1))} disabled={date >= todayKey()}>›</button>
-          <button className="btn primary" onClick={() => setFormOpen(true)}>+ Nuevo hábito</button>
+        <div className="row wrap">
+          <DateNav date={date} onChange={setDate} max={todayKey()} />
+          <button className="btn primary hide-mobile" onClick={() => setFormOpen(true)}>+ Nuevo hábito</button>
         </div>
       </div>
+
+      {!isToday && (
+        <div className="past-banner">
+          <span>✏️ Estás cargando el <b>{prettyDate(date)}</b>. Podés marcar hábitos, cantidades, notas y ánimo de ese día.</span>
+          <button className="btn sm primary" onClick={() => setDate(todayKey())}>Volver a hoy</button>
+        </div>
+      )}
 
       <div className="grid g3" style={{ marginBottom: 16 }}>
         <div className="hero span2">
@@ -147,7 +152,7 @@ export function Today() {
                 <details>
                   <summary className="muted small" style={{ cursor: 'pointer', padding: 4 }}>No programados hoy ({habits.length - scheduled.length})</summary>
                   <div className="habit-list" style={{ marginTop: 8, opacity: .7 }}>
-                    {habits.filter((h) => !isScheduled(h, date)).map((h) => <HabitRow key={h.id} habit={h} date={date} />)}
+                    {habits.filter((h) => !matchesDay(h, date)).map((h) => <HabitRow key={h.id} habit={h} date={date} />)}
                   </div>
                 </details>
               )}

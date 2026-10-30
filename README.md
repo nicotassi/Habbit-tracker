@@ -38,8 +38,9 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Página de detalle por hábito: evolución de la fuerza, heatmap, día de la semana, valores vs meta, mes a mes, impacto en el ánimo, notas.
 
 **Extras**
+- Cargar o corregir cualquier día anterior (hábitos, cantidades, notas y ánimo) con el selector de fecha de Hoy, Ánimo o el Calendario.
 - Calendario mensual con edición de cualquier día.
-- Modo foco (pomodoro) vinculable a un hábito + respiración guiada 4-4-4-4.
+- Pomodoro configurable (duración, descansos corto/largo, ciclos, meta diaria, inicio automático) que sigue corriendo al cambiar de pestaña, más foco libre y respiración guiada 4-4-4-4.
 - Objetivos con ritmo necesario (“necesitás ~3 por semana”) y revisión semanal.
 - XP, niveles y 26 logros desbloqueables. Confeti y sonido al completar.
 - Paleta de comandos (⌘K / Ctrl+K), atajos de teclado (N, 1–8).

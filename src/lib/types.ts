@@ -85,6 +85,12 @@ export interface Settings {
   notifications: boolean;
   confetti: boolean;
   sound: boolean;
+  pomoWork: number; // minutos
+  pomoShort: number;
+  pomoLong: number;
+  pomoEvery: number; // pomodoros antes del descanso largo
+  pomoGoal: number; // pomodoros por día
+  pomoAuto: boolean; // arrancar la siguiente fase sola
 }
 
 export interface AppData {

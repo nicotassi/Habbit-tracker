@@ -12,6 +12,12 @@ export function isScheduled(h: Habit, date: string): boolean {
   return true;
 }
 
+/** Igual que isScheduled pero ignora la fecha de creación: sirve para cargar días anteriores. */
+export function matchesDay(h: Habit, date: string): boolean {
+  if (h.frequency.type === 'weekdays') return h.frequency.days.includes(fromKey(date).getDay());
+  return true;
+}
+
 export function isDone(h: Habit, e: Entry | undefined, date?: string): boolean {
   if (h.kind === 'avoid') {
     if (date && (date < h.createdAt || date > todayKey())) return false;

@@ -4,7 +4,9 @@ import { navigate, useRoute } from './router';
 import { activeHabits, entryOf, isDone, isScheduled, levelOf, levelTitle, xpOf } from './lib/stats';
 import { evaluateAchievements, ACHIEVEMENTS } from './lib/achievements';
 import { todayKey } from './lib/date';
-import { Bar, confetti, Dialogs, toast, Toasts } from './components/ui';
+import { Bar, chime, confetti, Dialogs, toast, Toasts } from './components/ui';
+import { checkTimer, PHASE_LABEL, phaseMinutes, secondsLeft, setFinishListener, useTimer } from './lib/timer';
+import { useNow } from './pages/Focus';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
 import { Habits } from './pages/Habits';
@@ -23,12 +25,12 @@ const NAV = [
   { id: 'analytics', ico: '📊', label: 'Análisis' },
   { id: 'mood', ico: '🫶', label: 'Ánimo' },
   { id: 'calendar', ico: '🗓️', label: 'Calendario' },
-  { id: 'focus', ico: '⏱️', label: 'Foco' },
+  { id: 'focus', ico: '🍅', label: 'Pomodoro' },
   { id: 'goals', ico: '🚩', label: 'Objetivos' },
   { id: 'achievements', ico: '🏆', label: 'Logros' },
   { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
 ];
-const MOBILE = ['today', 'habits', 'analytics', 'mood', 'calendar'];
+const MOBILE = ['today', 'habits', 'analytics', 'mood', 'focus'];
 
 export default function App() {
   const route = useRoute();
@@ -36,6 +38,28 @@ export default function App() {
   const data = useStore();
   const [palette, setPalette] = useState(false);
   const [newHabit, setNewHabit] = useState(false);
+  const [more, setMore] = useState(false);
+
+  // Pomodoro: revisa el temporizador en cualquier pestaña y avisa al terminar cada fase
+  useEffect(() => {
+    setFinishListener(({ finished, next, minutes }) => {
+      const s = getData().settings;
+      if (s.sound) chime(true);
+      try { navigator.vibrate?.([200, 100, 200]); } catch { /* sin vibración */ }
+      const msg = finished === 'work' ? `🍅 Pomodoro terminado (${minutes} min). Ahora: ${PHASE_LABEL[next].toLowerCase()}.`
+        : finished === 'free' ? `Terminaste ${minutes} min de foco.` : '☕ Fin del descanso. ¡A enfocarse!';
+      toast(msg);
+      if (finished === 'work' && s.confetti) confetti(window.innerWidth / 2, window.innerHeight / 3, 90);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try { new Notification('Ritmo', { body: msg, icon: './icon.svg' }); } catch { /* algunos navegadores solo permiten notificar desde el service worker */ }
+      }
+    });
+    const i = setInterval(checkTimer, 1000);
+    const vis = () => checkTimer();
+    document.addEventListener('visibilitychange', vis);
+    checkTimer();
+    return () => { clearInterval(i); document.removeEventListener('visibilitychange', vis); };
+  }, []);
 
   // Tema
   useEffect(() => {
@@ -128,6 +152,7 @@ export default function App() {
     }
   })();
   const active = page === 'habit' ? 'habits' : page;
+  const go = (id: string) => { setMore(false); navigate(id); };
 
   return (
     <div className="app">
@@ -137,7 +162,9 @@ export default function App() {
             <svg width="20" height="20" viewBox="0 0 64 64"><path d="M8 38c7 0 7-16 14-16s7 20 14 20 7-24 14-24" fill="none" stroke="#f3d9b1" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
           <span className="brand-name">Ritmo</span>
+          <button className="btn ghost icon" style={{ marginLeft: 'auto' }} title="Ajustes" aria-label="Ajustes" onClick={() => navigate('ajustes')}>⚙️</button>
         </div>
+        <TimerPill />
         <button className="nav-item" onClick={() => setPalette(true)} style={{ border: '1px solid var(--line)', marginBottom: 10, color: 'var(--ink-3)' }}>
           <span className="ico">🔎</span><span className="grow">Buscar…</span><kbd>⌘K</kbd>
         </button>
@@ -159,16 +186,47 @@ export default function App() {
         </div>
       </aside>
 
+      <header className="topbar">
+        <button className="brand" style={{ border: 0, background: 'transparent', padding: 0 }} onClick={() => go('today')}>
+          <div className="brand-mark">
+            <svg width="18" height="18" viewBox="0 0 64 64"><path d="M8 38c7 0 7-16 14-16s7 20 14 20 7-24 14-24" fill="none" stroke="#f3d9b1" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <span className="brand-name" style={{ fontSize: 24 }}>Ritmo</span>
+        </button>
+        <TimerPill compact />
+        <div className="row" style={{ gap: 2, marginLeft: 'auto' }}>
+          <button className="btn ghost icon" aria-label="Nuevo hábito" onClick={() => setNewHabit(true)}>＋</button>
+          <button className="btn ghost icon" aria-label="Buscar" onClick={() => setPalette(true)}>🔎</button>
+          <button className={`btn ghost icon ${active === 'ajustes' ? 'on' : ''}`} aria-label="Ajustes" onClick={() => go('ajustes')}>⚙️</button>
+        </div>
+      </header>
+
       <main className="main">{content}</main>
 
       <nav className="mobile-nav">
         {NAV.filter((n) => MOBILE.includes(n.id)).map((n) => (
-          <button key={n.id} className={active === n.id ? 'active' : ''} onClick={() => navigate(n.id)}>
+          <button key={n.id} className={active === n.id && !more ? 'active' : ''} onClick={() => go(n.id)}>
             <span className="ico">{n.ico}</span>{n.label}
           </button>
         ))}
-        <button onClick={() => setPalette(true)}><span className="ico">☰</span>Más</button>
+        <button className={more || (!MOBILE.includes(active)) ? 'active' : ''} onClick={() => setMore((m) => !m)}><span className="ico">☰</span>Más</button>
       </nav>
+
+      {more && (
+        <div className="sheet-overlay" onClick={(e) => e.target === e.currentTarget && setMore(false)}>
+          <div className="sheet">
+            <div className="sheet-grid">
+              {NAV.filter((n) => !MOBILE.includes(n.id)).map((n) => (
+                <button key={n.id} className={`sheet-item ${active === n.id ? 'active' : ''}`} onClick={() => go(n.id)}>
+                  <span className="ico">{n.ico}</span>{n.label}
+                </button>
+              ))}
+              <button className="sheet-item" onClick={() => { setMore(false); setNewHabit(true); }}><span className="ico">➕</span>Nuevo hábito</button>
+              <button className="sheet-item" onClick={() => { setMore(false); setPalette(true); }}><span className="ico">🔎</span>Buscar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
@@ -220,5 +278,21 @@ function Palette({ onClose, onNew }: { onClose: () => void; onNew: () => void })
         </div>
       </div>
     </div>
+  );
+}
+
+/** Muestra el pomodoro en curso desde cualquier pestaña. */
+function TimerPill({ compact }: { compact?: boolean }) {
+  const t = useTimer();
+  const now = useNow(t.running);
+  const left = secondsLeft(t, now);
+  // visible mientras corre o si quedó pausado a mitad de una fase
+  if (!t.running && left >= phaseMinutes(t.phase, t.freeMinutes) * 60) return null;
+  const mm = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`;
+  const isBreak = t.phase === 'short' || t.phase === 'long';
+  return (
+    <button className={`timer-pill ${isBreak ? 'break' : ''} ${compact ? 'compact' : ''}`} onClick={() => navigate('focus')} aria-label={`${PHASE_LABEL[t.phase]}: quedan ${mm}`}>
+      <span>{isBreak ? '☕' : '🍅'}</span><b>{mm}</b>{!compact && <span className="muted">{PHASE_LABEL[t.phase]}</span>}
+    </button>
   );
 }

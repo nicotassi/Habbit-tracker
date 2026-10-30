@@ -95,7 +95,7 @@ export function Habits() {
                   <div className="row between tiny muted" style={{ marginBottom: 4 }}><span>Fuerza del hábito</span><span>{Math.round(str * 100)}%</span></div>
                   <Bar value={str} color={h.color} />
                 </div>
-                <div className="row" style={{ marginTop: 12, gap: 4 }}>
+                <div className="row wrap" style={{ marginTop: 12, gap: 4 }}>
                   <button className="btn sm" onClick={() => navigate(`habit/${h.id}`)}>📊 Estadísticas</button>
                   <button className="btn sm ghost" onClick={() => { setEdit(h); setOpen(true); }}>Editar</button>
                   <button className="btn sm ghost" onClick={() => { updateHabit(h.id, { archived: !h.archived }); toast(h.archived ? 'Restaurado' : 'Archivado (tu historial se conserva)', '🗄️'); }}>

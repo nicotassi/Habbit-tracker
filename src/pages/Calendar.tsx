@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
-import { activeHabits, dayStats, isScheduled } from '../lib/stats';
+import { activeHabits, dayStats, matchesDay } from '../lib/stats';
 import { addDays, fromKey, MONTHS, prettyDate, todayKey, toKey, WEEKDAYS_SHORT, weekStartOf } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger, moodFace } from '../components/MoodLogger';
@@ -61,8 +61,8 @@ export function Calendar({ initial }: { initial?: string }) {
               <div><div className="eyebrow">Día seleccionado</div><div className="serif" style={{ fontSize: 24, lineHeight: 1.1 }}>{prettyDate(sel)}</div></div>
             </div>
             <div className="habit-list">
-              {habits.filter((h) => isScheduled(h, sel)).map((h) => <HabitRow key={h.id} habit={h} date={sel} />)}
-              {!habits.some((h) => isScheduled(h, sel)) && <div className="small muted">Sin hábitos programados.</div>}
+              {habits.filter((h) => matchesDay(h, sel)).map((h) => <HabitRow key={h.id} habit={h} date={sel} />)}
+              {!habits.some((h) => matchesDay(h, sel)) && <div className="small muted">Sin hábitos programados.</div>}
             </div>
           </div>
           <div className="card"><div className="card-head"><h3 className="h3">Ánimo</h3></div><MoodLogger date={sel} compact /></div>

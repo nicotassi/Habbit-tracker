@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Bar as RBar, BarChart, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { useStore } from '../lib/store';
+import { scrollToTop } from '../router';
 import { emotionFrequency, mean, pearson, rollingAvg, tagFrequency } from '../lib/stats';
 import { addDays, MONTHS, MONTHS_SHORT, prettyDate, range, shortDate, todayKey } from '../lib/date';
 import { MoodLogger, moodColor, moodFace } from '../components/MoodLogger';
-import { ChartTooltip, Empty, Seg, Stat } from '../components/ui';
+import { ChartTooltip, DateNav, Empty, Seg, Stat } from '../components/ui';
 
 export function Mood() {
   const { moods, deleteMood } = useStore();
@@ -56,8 +57,7 @@ export function Mood() {
           <div className="card-head">
             <div><h3 className="h3">Registro de {prettyDate(date)}</h3><span className="sub">Elegí cómo estás y sumá contexto</span></div>
             <div className="row">
-              <button className="btn icon sm" onClick={() => setDate(addDays(date, -1))}>‹</button>
-              <button className="btn icon sm" disabled={date >= today} onClick={() => setDate(addDays(date, 1))}>›</button>
+              <DateNav date={date} onChange={setDate} max={today} />
               {moods[date] && <button className="btn ghost sm danger" onClick={() => deleteMood(date)}>Borrar</button>}
             </div>
           </div>
@@ -169,7 +169,7 @@ export function Mood() {
         {journal.length ? (
           <div className="col" style={{ gap: 0 }}>
             {journal.slice(0, shown).map((m) => (
-              <div key={m.date} style={{ padding: '14px 0', borderBottom: '1px solid var(--line)', cursor: 'pointer' }} onClick={() => { setDate(m.date); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <div key={m.date} style={{ padding: '14px 0', borderBottom: '1px solid var(--line)', cursor: 'pointer' }} onClick={() => { setDate(m.date); scrollToTop(); }}>
                 <div className="row"><span style={{ fontSize: 22 }}>{moodFace(m.mood)}</span><b>{prettyDate(m.date)}</b>
                   <span className="row wrap" style={{ gap: 4 }}>{m.tags.map((t) => <span key={t} className="badge">#{t}</span>)}</span></div>
                 {m.note && <div className="ink2" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{m.note}</div>}

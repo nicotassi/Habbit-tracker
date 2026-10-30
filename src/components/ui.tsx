@@ -232,3 +232,21 @@ export function Dialogs() {
     </div>
   );
 }
+
+/* ---------- Navegador de fechas ---------- */
+export function DateNav({ date, onChange, max }: { date: string; onChange: (d: string) => void; max: string }) {
+  const shift = (n: number) => {
+    const d = new Date(date + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    const k = d.toISOString().slice(0, 10);
+    if (k <= max) onChange(k);
+  };
+  return (
+    <div className="date-nav">
+      <button className="btn icon" type="button" onClick={() => shift(-1)} aria-label="Día anterior">‹</button>
+      <input id="date-nav-input" className="input date-input" type="date" value={date} max={max} aria-label="Elegir fecha"
+        onChange={(e) => e.target.value && e.target.value <= max && onChange(e.target.value)} />
+      <button className="btn icon" type="button" onClick={() => shift(1)} disabled={date >= max} aria-label="Día siguiente">›</button>
+    </div>
+  );
+}
