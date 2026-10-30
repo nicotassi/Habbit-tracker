@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 
 export function Ring({ value, size = 120, stroke = 10, color = 'var(--accent)', track = 'var(--bg-2)', children }: {
@@ -184,6 +184,51 @@ export function ChartTooltip({ active, payload, label, fmt }: {
           <b style={{ marginLeft: 'auto' }}>{fmt ? fmt(p.value, p.name) : p.value}</b>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ---------- Diálogos propios (el visor bloquea confirm/prompt) ---------- */
+interface DialogReq {
+  kind: 'confirm' | 'text';
+  title: string;
+  body?: string;
+  initial?: string;
+  multiline?: boolean;
+  danger?: boolean;
+  ok?: string;
+  resolve: (v: string | boolean | null) => void;
+}
+const useDialog = create<{ req: DialogReq | null; set: (r: DialogReq | null) => void }>((set) => ({ req: null, set: (req) => set({ req }) }));
+
+export function askConfirm(title: string, opts: { body?: string; danger?: boolean; ok?: string } = {}): Promise<boolean> {
+  return new Promise((resolve) => useDialog.getState().set({ kind: 'confirm', title, ...opts, resolve: (v) => resolve(v === true) }));
+}
+export function askText(title: string, initial = '', opts: { body?: string; multiline?: boolean; ok?: string } = {}): Promise<string | null> {
+  return new Promise((resolve) => useDialog.getState().set({ kind: 'text', title, initial, ...opts, resolve: (v) => resolve(typeof v === 'string' ? v : null) }));
+}
+
+export function Dialogs() {
+  const req = useDialog((s) => s.req);
+  const set = useDialog((s) => s.set);
+  const [val, setVal] = useState('');
+  useEffect(() => setVal(req?.initial ?? ''), [req]);
+  if (!req) return null;
+  const close = (v: string | boolean | null) => { req.resolve(v); set(null); };
+  const submit = () => close(req.kind === 'confirm' ? true : val);
+  return (
+    <div className="overlay" style={{ zIndex: 70 }} onMouseDown={(e) => e.target === e.currentTarget && close(null)}>
+      <form className="modal" style={{ width: 'min(420px, 100%)' }} onSubmit={(e) => { e.preventDefault(); submit(); }} onKeyDown={(e) => e.key === 'Escape' && close(null)}>
+        <h2 className="h2" style={{ fontSize: 24, marginBottom: 8 }}>{req.title}</h2>
+        {req.body && <p className="small ink2" style={{ marginTop: 0 }}>{req.body}</p>}
+        {req.kind === 'text' && (req.multiline
+          ? <textarea id="dialog-text" className="textarea" autoFocus value={val} onChange={(e) => setVal(e.target.value)} style={{ minHeight: 120 }} />
+          : <input id="dialog-text" className="input" autoFocus value={val} onChange={(e) => setVal(e.target.value)} />)}
+        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
+          <button type="button" className="btn ghost" onClick={() => close(null)}>Cancelar</button>
+          <button type="submit" autoFocus={req.kind === 'confirm'} className="btn primary" style={req.danger ? { background: 'var(--bad)', borderColor: 'var(--bad)' } : undefined}>{req.ok ?? 'Aceptar'}</button>
+        </div>
+      </form>
     </div>
   );
 }

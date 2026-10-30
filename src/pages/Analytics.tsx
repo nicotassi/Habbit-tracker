@@ -68,7 +68,7 @@ export function Analytics() {
     return (
       <div>
         <div className="page-head"><div><div className="eyebrow">Análisis</div><h1 className="title">Tu <em>progreso</em></h1></div></div>
-        <div className="card"><Empty emoji="📊" title="Todavía no hay datos"><p>Creá hábitos o cargá la demo desde Ajustes.</p><button className="btn primary" onClick={() => navigate('settings')}>Ir a Ajustes</button></Empty></div>
+        <div className="card"><Empty emoji="📊" title="Todavía no hay datos"><p>Creá hábitos o cargá la demo desde Ajustes.</p><button className="btn primary" onClick={() => navigate('ajustes')}>Ir a Ajustes</button></Empty></div>
       </div>
     );
   }

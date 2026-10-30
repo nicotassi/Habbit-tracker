@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import type { Goal } from '../lib/types';
 import { activeHabits, dayStats, entryOf, isDone, mean } from '../lib/stats';
 import { addDays, diffDays, prettyDate, range, shortDate, todayKey, weekStartOf } from '../lib/date';
-import { Bar, Empty, Modal, Ring, toast } from '../components/ui';
+import { askConfirm, Bar, Empty, Modal, Ring, toast } from '../components/ui';
 import { moodFace } from '../components/MoodLogger';
 
 function goalProgress(g: Goal, data: ReturnType<typeof useStore.getState>) {
@@ -72,7 +72,7 @@ export function Goals() {
                 {p.pct < 1 && daysLeft > 0 && <div className="tiny muted" style={{ marginTop: 10 }}>Necesitás ~{Math.ceil(((g.target - p.count) / daysLeft) * 7)} por semana para llegar al {shortDate(g.deadline)}.</div>}
                 <div className="row" style={{ marginTop: 10, gap: 4 }}>
                   <button className="btn ghost sm" onClick={() => { setDraft(g); setOpen(true); }}>Editar</button>
-                  <button className="btn ghost sm danger" onClick={() => confirm('¿Eliminar objetivo?') && deleteGoal(g.id)}>Eliminar</button>
+                  <button className="btn ghost sm danger" onClick={async () => (await askConfirm('¿Eliminar objetivo?', { danger: true, ok: 'Eliminar' })) && deleteGoal(g.id)}>Eliminar</button>
                 </div>
               </div>
             );

@@ -4,7 +4,7 @@ import { navigate, useRoute } from './router';
 import { activeHabits, entryOf, isDone, isScheduled, levelOf, levelTitle, xpOf } from './lib/stats';
 import { evaluateAchievements, ACHIEVEMENTS } from './lib/achievements';
 import { todayKey } from './lib/date';
-import { Bar, confetti, toast, Toasts } from './components/ui';
+import { Bar, confetti, Dialogs, toast, Toasts } from './components/ui';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
 import { Habits } from './pages/Habits';
@@ -26,7 +26,7 @@ const NAV = [
   { id: 'focus', ico: '⏱️', label: 'Foco' },
   { id: 'goals', ico: '🚩', label: 'Objetivos' },
   { id: 'achievements', ico: '🏆', label: 'Logros' },
-  { id: 'settings', ico: '⚙️', label: 'Ajustes' },
+  { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
 ];
 const MOBILE = ['today', 'habits', 'analytics', 'mood', 'calendar'];
 
@@ -123,7 +123,7 @@ export default function App() {
       case 'focus': return <Focus key={route[1]} habitId={route[1]} />;
       case 'goals': return <Goals />;
       case 'achievements': return <Achievements />;
-      case 'settings': return <Settings />;
+      case 'ajustes': return <Settings />;
       default: return <Today />;
     }
   })();
@@ -173,6 +173,7 @@ export default function App() {
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
       <Toasts />
+      <Dialogs />
     </div>
   );
 }

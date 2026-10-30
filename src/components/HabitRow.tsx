@@ -3,7 +3,7 @@ import type { Habit } from '../lib/types';
 import { useStore, getData } from '../lib/store';
 import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../lib/stats';
 import { addDays, weekStartOf } from '../lib/date';
-import { chime, confetti, toast } from './ui';
+import { askText, chime, confetti, toast } from './ui';
 import { navigate } from '../router';
 
 const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
@@ -77,9 +77,9 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
       {(h.kind === 'count' || h.kind === 'quantity') && (
         <div className="stepper">
           <button onClick={(ev) => commit(value - step, ev.currentTarget)} aria-label="restar">−</button>
-          <div className="val" onClick={() => {
-            const r = prompt(`${h.name}: ¿cuánto${h.unit ? ` (${h.unit})` : ''}?`, String(value));
-            if (r !== null && !isNaN(Number(r))) commit(Number(r), null);
+          <div className="val" onClick={async () => {
+            const r = await askText(`${h.name}: ¿cuánto${h.unit ? ` (${h.unit})` : ''}?`, String(value), { ok: 'Guardar' });
+            if (r !== null && r.trim() !== '' && !isNaN(Number(r.replace(',', '.')))) commit(Number(r.replace(',', '.')), null);
           }} style={{ cursor: 'text' }}>
             {value}<small>/{h.target}{h.unit ? ` ${h.unit}` : ''}</small>
           </div>
@@ -105,7 +105,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
         {menu && (
           <div className="card" style={{ position: 'absolute', right: 0, top: 40, zIndex: 20, padding: 6, width: 210 }} onMouseLeave={() => setMenu(false)}>
             <button className="menu-item"
-              onClick={() => { const n = prompt('Nota para este día', e?.note ?? ''); if (n !== null) setEntry(date, h.id, { value: e?.value ?? 0, skipped: e?.skipped, note: n }); setMenu(false); }}>
+              onClick={async () => { setMenu(false); const n = await askText('Nota para este día', e?.note ?? '', { multiline: true, ok: 'Guardar nota' }); if (n !== null) setEntry(date, h.id, { value: e?.value ?? 0, skipped: e?.skipped, note: n }); }}>
               📝 Agregar nota
             </button>
             <button className="menu-item"

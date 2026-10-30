@@ -4,7 +4,7 @@ import type { Habit } from '../lib/types';
 import { completionRate, strength, streaks, totalCompletions } from '../lib/stats';
 import { addDays, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { HabitForm } from '../components/HabitForm';
-import { Bar, Empty, Seg, toast } from '../components/ui';
+import { askConfirm, Bar, Empty, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 
 export function freqLabel(h: Habit): string {
@@ -101,7 +101,7 @@ export function Habits() {
                   <button className="btn sm ghost" onClick={() => { updateHabit(h.id, { archived: !h.archived }); toast(h.archived ? 'Restaurado' : 'Archivado (tu historial se conserva)', '🗄️'); }}>
                     {h.archived ? 'Restaurar' : 'Archivar'}
                   </button>
-                  <button className="btn sm ghost danger" style={{ marginLeft: 'auto' }} onClick={() => { if (confirm(`¿Eliminar "${h.name}" y todo su historial?`)) deleteHabit(h.id); }}>Eliminar</button>
+                  <button className="btn sm ghost danger" style={{ marginLeft: 'auto' }} onClick={async () => { if (await askConfirm(`¿Eliminar "${h.name}"?`, { body: 'Se borra el hábito y todo su historial. Si querés conservarlo, archivalo.', danger: true, ok: 'Eliminar' })) deleteHabit(h.id); }}>Eliminar</button>
                 </div>
               </div>
             );

@@ -119,7 +119,7 @@ export function Today() {
                 <p>Sin límites: agregá todos los que quieras. También podés cargar datos de ejemplo para explorar.</p>
                 <div className="row" style={{ justifyContent: 'center' }}>
                   <button className="btn primary" onClick={() => setFormOpen(true)}>+ Crear hábito</button>
-                  <button className="btn" onClick={() => navigate('settings')}>Cargar demo</button>
+                  <button className="btn" onClick={() => navigate('ajustes')}>Cargar demo</button>
                 </div>
               </Empty>
             </div>

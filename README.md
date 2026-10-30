@@ -44,5 +44,9 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 
 Los datos se guardan localmente en el navegador (localStorage).
 
+## Versión de un solo archivo
+
+`npm run build:single` genera `dist/ritmo-single.html`: un HTML autocontenido (JS y CSS embebidos) que se puede publicar en cualquier lado, por ejemplo como Artifact de claude.ai para abrirlo desde el celular. Dentro de ese visor las descargas están bloqueadas, así que el backup se hace con **Copiar backup / Pegar backup**.
+
 ## Stack
 React 18 + TypeScript + Vite, Zustand (estado persistente), Recharts (gráficos).

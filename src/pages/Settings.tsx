@@ -1,13 +1,29 @@
 import { useRef } from 'react';
-import { useStore } from '../lib/store';
+import { getData, useStore } from '../lib/store';
 import { buildDemo } from '../lib/demo';
-import { exportCSV, exportJSON, readBackup } from '../lib/io';
-import { Seg, toast } from '../components/ui';
+import { copyBackup, exportCSV, exportJSON, parseBackup, readBackup } from '../lib/io';
+import type { AppData } from '../lib/types';
+import { askConfirm, askText, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
+
+// Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
+const embedded = window.top !== window;
 
 export function Settings() {
   const { settings, setSettings, replaceAll, reset, habits, moods } = useStore();
   const file = useRef<HTMLInputElement>(null);
+  const restore = async (d: AppData) => {
+    if (await askConfirm('¿Reemplazar tus datos?', { body: 'El backup reemplaza todos los hábitos y registros actuales.', ok: 'Importar' })) { replaceAll(d); toast('Backup importado', '✅'); }
+  };
+  const copy = async () => {
+    if (await copyBackup()) return toast('Backup copiado. Guardalo en tus notas o mandátelo por mensaje.', '📋');
+    await askText('Copiá este texto', JSON.stringify(getData()), { multiline: true, ok: 'Listo' });
+  };
+  const paste = async () => {
+    const t = await askText('Pegá tu backup', '', { multiline: true, body: 'Pegá el texto que copiaste con “Copiar backup”.', ok: 'Continuar' });
+    if (!t) return;
+    try { await restore(parseBackup(t)); } catch { toast('Ese texto no es un backup válido', '⚠️'); }
+  };
   const askNotif = async () => {
     if (!('Notification' in window)) return toast('Tu navegador no soporta notificaciones', '🔕');
     const p = await Notification.requestPermission();
@@ -46,17 +62,19 @@ export function Settings() {
         <div className="col" style={{ gap: 16 }}>
           <div className="card col" style={{ gap: 12 }}>
             <h3 className="h3">Tus datos</h3>
-            <p className="small muted" style={{ margin: 0 }}>Todo se guarda localmente en este dispositivo. {habits.length} hábitos · {Object.keys(moods).length} registros de ánimo.</p>
+            <p className="small muted" style={{ margin: 0 }}>Todo se guarda en este navegador, en este dispositivo. Para pasar tus datos a otro, usá Copiar backup y Pegar backup. {habits.length} hábitos · {Object.keys(moods).length} registros de ánimo.</p>
             <div className="row wrap">
-              <button className="btn" onClick={exportJSON}>⬇️ Backup (JSON)</button>
-              <button className="btn" onClick={exportCSV}>📄 Exportar CSV</button>
-              <button className="btn" onClick={() => file.current?.click()}>⬆️ Importar backup</button>
+              {!embedded && <button className="btn" onClick={exportJSON}>⬇️ Backup (JSON)</button>}
+              {!embedded && <button className="btn" onClick={exportCSV}>📄 Exportar CSV</button>}
+              <button className="btn" onClick={() => file.current?.click()}>⬆️ Importar archivo</button>
+              <button className="btn" onClick={copy}>📋 Copiar backup</button>
+              <button className="btn" onClick={paste}>📥 Pegar backup</button>
               <input ref={file} type="file" accept="application/json" hidden onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
                 try {
                   const d = await readBackup(f);
-                  if (confirm('Esto reemplaza tus datos actuales. ¿Continuar?')) { replaceAll(d); toast('Backup importado', '✅'); }
+                  await restore(d);
                 } catch { toast('Archivo inválido', '⚠️'); }
                 e.target.value = '';
               }} />
@@ -65,7 +83,7 @@ export function Settings() {
           <div className="card col" style={{ gap: 12 }}>
             <h3 className="h3">Explorar con datos de ejemplo</h3>
             <p className="small muted" style={{ margin: 0 }}>Carga 4 meses de hábitos, ánimo y sesiones de foco simulados para ver todos los análisis en acción.</p>
-            <div><button className="btn accent" onClick={() => { if (!habits.length || confirm('Esto reemplaza tus datos actuales. ¿Continuar?')) { replaceAll(buildDemo()); toast('Demo cargada', '✨'); navigate('today'); } }}>✨ Cargar demo</button></div>
+            <div><button className="btn accent" onClick={async () => { if (!habits.length || await askConfirm('¿Cargar la demo?', { body: 'Reemplaza tus datos actuales por datos de ejemplo.', ok: 'Cargar demo' })) { replaceAll(buildDemo()); toast('Demo cargada', '✨'); navigate('today'); } }}>✨ Cargar demo</button></div>
           </div>
           <div className="card col" style={{ gap: 12 }}>
             <h3 className="h3">Atajos de teclado</h3>
@@ -77,7 +95,7 @@ export function Settings() {
           </div>
           <div className="card col" style={{ gap: 12, borderColor: 'color-mix(in srgb, var(--bad) 30%, var(--line))' }}>
             <h3 className="h3" style={{ color: 'var(--bad)' }}>Zona de peligro</h3>
-            <div><button className="btn danger" onClick={() => { if (confirm('¿Borrar TODOS los datos? No se puede deshacer.')) { reset(); toast('Datos borrados', '🗑️'); } }}>Borrar todo</button></div>
+            <div><button className="btn danger" onClick={async () => { if (await askConfirm('¿Borrar todos los datos?', { body: 'Se eliminan hábitos, registros de ánimo, objetivos y logros. No se puede deshacer.', danger: true, ok: 'Borrar todo' })) { reset(); toast('Datos borrados', '🗑️'); } }}>Borrar todo</button></div>
           </div>
         </div>
       </div>

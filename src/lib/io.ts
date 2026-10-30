@@ -46,8 +46,20 @@ export function exportCSV() {
   }
 }
 
+export async function copyBackup(): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(getData()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function readBackup(file: File): Promise<AppData> {
-  const text = await file.text();
+  return parseBackup(await file.text());
+}
+
+export function parseBackup(text: string): AppData {
   const data = JSON.parse(text);
   if (!data || !Array.isArray(data.habits) || typeof data.logs !== 'object') throw new Error('Archivo inválido');
   return data as AppData;
