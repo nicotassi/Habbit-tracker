@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppData, Entry, FocusSession, Goal, Habit, MoodEntry, Settings, WeeklyReview } from './types';
+import type { AppData, Entry, FocusSession, Goal, Habit, MoodEntry, Settings, WatchMetrics, WeeklyReview } from './types';
 import { todayKey } from './date';
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -26,6 +26,7 @@ export const emptyData = (): AppData => ({
   habits: [],
   logs: {},
   moods: {},
+  watch: {},
   focus: [],
   goals: [],
   reviews: {},
@@ -41,6 +42,7 @@ interface Actions {
   setEntry: (date: string, habitId: string, entry: (Entry & { at?: number }) | null) => void;
   setMood: (date: string, mood: Partial<MoodEntry>) => void;
   deleteMood: (date: string) => void;
+  setWatch: (date: string, m: WatchMetrics | null) => void;
   addFocus: (s: Omit<FocusSession, 'id' | 'at' | 'date'>) => void;
   deleteFocus: (id: string) => void;
   upsertGoal: (g: Partial<Goal> & { title: string }) => void;
@@ -113,6 +115,13 @@ export const useStore = create<Store>()(
           const { [date]: _, ...rest } = s.moods;
           return { moods: rest };
         }),
+      setWatch: (date, m) =>
+        set((s) => {
+          const watch = { ...s.watch };
+          if (!m || !Object.keys(m).length) delete watch[date];
+          else watch[date] = m;
+          return { watch };
+        }),
       addFocus: (f) =>
         set((s) => ({ focus: [...s.focus, { ...f, id: uid(), at: Date.now(), date: todayKey() }] })),
       deleteFocus: (id) => set((s) => ({ focus: s.focus.filter((f) => f.id !== id) })),
@@ -155,6 +164,7 @@ export const useStore = create<Store>()(
         habits: s.habits,
         logs: s.logs,
         moods: s.moods,
+        watch: s.watch,
         focus: s.focus,
         goals: s.goals,
         reviews: s.reviews,
@@ -172,6 +182,7 @@ export function getData(): AppData {
     habits: s.habits,
     logs: s.logs,
     moods: s.moods,
+    watch: s.watch,
     focus: s.focus,
     goals: s.goals,
     reviews: s.reviews,

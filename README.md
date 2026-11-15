@@ -37,6 +37,14 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Insights automáticos en lenguaje natural.
 - Página de detalle por hábito: evolución de la fuerza, heatmap, día de la semana, valores vs meta, mes a mes, impacto en el ánimo, notas.
 
+**Rescate y pronóstico**
+- **Nunca dos veces seguidas:** si fallaste un hábito el último día que tocaba, hoy aparece primero en “Rescate”, con aviso al recuperarlo (y logro “Rescatista”).
+- **Pronóstico:** avisa los hábitos que solés fallar en el día de la semana de hoy y proyecta cuándo llegás a 66 días seguidos (hábito automático) o a fuerza 80% (consolidado).
+
+**Datos del reloj**
+- Subís una captura de la app de tu reloj y se lee en el propio celular (OCR con Tesseract.js, gratis y sin enviar la imagen a ningún servidor): sueño, puntaje de sueño, pasos, FC en reposo, VFC, estrés, Body Battery, calorías, oxígeno y distancia. Revisás los números antes de guardar; también se pueden cargar a mano.
+- En Ánimo, “Tu reloj” muestra la evolución de cada dato y qué hábitos lo mueven.
+
 **Extras**
 - Cargar o corregir cualquier día anterior (hábitos, cantidades, notas y ánimo) con el selector de fecha de Hoy, Ánimo o el Calendario.
 - Calendario mensual con edición de cualquier día.

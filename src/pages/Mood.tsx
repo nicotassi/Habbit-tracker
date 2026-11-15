@@ -5,10 +5,11 @@ import { scrollToTop } from '../router';
 import { emotionFrequency, mean, pearson, rollingAvg, tagFrequency } from '../lib/stats';
 import { addDays, MONTHS, MONTHS_SHORT, prettyDate, range, shortDate, todayKey } from '../lib/date';
 import { MoodLogger, moodColor, moodFace } from '../components/MoodLogger';
+import { WatchCard } from '../components/WatchImport';
 import { ChartTooltip, DateNav, Empty, Seg, Stat } from '../components/ui';
 
 export function Mood() {
-  const { moods, deleteMood } = useStore();
+  const { moods, deleteMood, watch } = useStore();
   const [date, setDate] = useState(todayKey());
   const [span, setSpan] = useState<30 | 90 | 365>(30);
   const [search, setSearch] = useState('');
@@ -21,7 +22,8 @@ export function Mood() {
     const rm = rollingAvg(rows, 'mood', 7);
     const series = rows.map((r, i) => ({ ...r, moodAvg: rm[i] }));
     const entries = days.map((d) => moods[d]).filter(Boolean);
-    const sleep = entries.filter((m) => typeof m.sleep === 'number').map((m) => ({ sleep: m.sleep!, mood: m.mood, z: 1 }));
+    const sleepOf = (d: string) => moods[d]?.sleep ?? watch[d]?.sleepHours;
+    const sleep = entries.filter((m) => typeof sleepOf(m.date) === 'number').map((m) => ({ sleep: sleepOf(m.date)!, mood: m.mood, z: 1 }));
     const dist = [1, 2, 3, 4, 5].map((v) => ({ v, face: moodFace(v), count: entries.filter((m) => m.mood === v).length }));
     return {
       series,
@@ -36,7 +38,7 @@ export function Mood() {
       emotions: emotionFrequency({ moods } as never, days).slice(0, 10),
       tags: tagFrequency({ moods } as never, days).slice(0, 10),
     };
-  }, [moods, span, today]);
+  }, [moods, watch, span, today]);
 
   const year = new Date().getFullYear();
   const journal = Object.values(moods)
@@ -160,6 +162,8 @@ export function Mood() {
           </div>
         </div>
       )}
+
+      <WatchCard days={range(addDays(today, -(span - 1)), today)} />
 
       <div className="card" style={{ marginTop: 16 }}>
         <div className="card-head">

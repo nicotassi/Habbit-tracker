@@ -9,6 +9,7 @@ import { ChartTooltip, Empty, Ring, Seg, Stat } from '../components/ui';
 import { navigate } from '../router';
 import { freqLabel, kindLabel } from './Habits';
 import { HabitRow } from '../components/HabitRow';
+import { HabitForecast } from '../components/Forecast';
 
 export function HabitDetail({ id }: { id: string }) {
   const data = useStore();
@@ -163,6 +164,8 @@ export function HabitDetail({ id }: { id: string }) {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        <HabitForecast habit={h} />
 
         <div className="card">
           <div className="card-head"><h3 className="h3">Impacto en tu ánimo</h3></div>

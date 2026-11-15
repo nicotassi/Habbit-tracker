@@ -223,7 +223,7 @@ export async function pull(): Promise<void> {
   }
 }
 
-const KEYS = ['habits', 'logs', 'moods', 'focus', 'goals', 'reviews', 'settings', 'unlocked'] as const;
+const KEYS = ['habits', 'logs', 'moods', 'watch', 'focus', 'goals', 'reviews', 'settings', 'unlocked'] as const;
 
 /** Arranca la sincronización: guarda cada cambio (con un pequeño retraso) y refresca al volver a la app. */
 export function startSync() {

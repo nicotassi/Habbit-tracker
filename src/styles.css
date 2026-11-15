@@ -593,3 +593,23 @@ button, a, input, select { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   .page-anim, .mg-dot.on, .streak-flame.lit, .xp-float { animation: none; }
 }
+
+/* ---------- Rescate y pronóstico ---------- */
+.rescue-group { border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, transparent); border-radius: 18px; padding: 12px; }
+.rescue-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 4px 10px; }
+.forecast-item { display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 10px 12px; width: 100%; color: var(--ink); }
+button.forecast-item:hover { border-color: var(--line-2); }
+.forecast-item.risk { border-left: 3px solid var(--warn); }
+.forecast-item.good { border-left: 3px solid var(--good); }
+.fi-ico { font-size: 20px; line-height: 1.2; }
+
+/* ---------- Reloj ---------- */
+.watch-summary { display: flex; }
+.watch-preview { max-width: 100%; max-height: 260px; border-radius: 14px; border: 1px solid var(--line); object-fit: contain; }
+.watch-preview.small { max-height: 140px; max-width: 110px; }
+.watch-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.watch-fields .input.filled { border-color: color-mix(in srgb, var(--good) 55%, var(--line-2)); background: color-mix(in srgb, var(--good) 6%, var(--surface)); }
+.watch-found { border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.watch-found.ok { background: color-mix(in srgb, var(--good) 12%, var(--surface)); color: var(--good); }
+.watch-found.none { background: var(--bg-2); color: var(--ink-2); }
+.watch-raw { white-space: pre-wrap; font-size: 12px; max-height: 160px; overflow: auto; background: var(--bg-2); border-radius: 10px; padding: 10px; margin: 8px 0 0; }

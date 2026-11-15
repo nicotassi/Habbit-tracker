@@ -6,6 +6,8 @@ import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
 import { CountUp, DateNav, Empty, Ring } from '../components/ui';
 import { MonthGrid, StreakCard } from '../components/MonthGrid';
+import { ForecastCard } from '../components/Forecast';
+import { rescueOf } from '../lib/forecast';
 import { HabitForm } from '../components/HabitForm';
 import type { TimeOfDay } from '../lib/types';
 import { navigate } from '../router';
@@ -38,7 +40,10 @@ export function Today() {
   const [formOpen, setFormOpen] = useState(false);
   const [group, setGroup] = useState(true);
   const habits = activeHabits(data);
-  const scheduled = habits.filter((h) => matchesDay(h, date));
+  const allScheduled = habits.filter((h) => matchesDay(h, date));
+  // "nunca dos veces seguidas": los que se fallaron el último día programado van primero
+  const rescue = allScheduled.filter((h) => rescueOf(h, data.logs, date));
+  const scheduled = allScheduled.filter((h) => !rescue.includes(h));
   const s = dayStats(data, date);
   const xp = xpOf(data);
   const lv = levelOf(xp);
@@ -137,6 +142,15 @@ export function Today() {
                 <h2 className="h2">Hábitos</h2>
                 <button className="btn ghost sm" onClick={() => setGroup((g) => !g)}>{group ? 'Ver lista simple' : 'Agrupar por momento'}</button>
               </div>
+              {rescue.length > 0 && (
+                <div className="rescue-group">
+                  <div className="rescue-head">
+                    <span className="eyebrow" style={{ color: 'var(--warn)' }}>🛟 Rescate</span>
+                    <span className="small ink2">Nunca dos veces seguidas: hacé aunque sea un poco.</span>
+                  </div>
+                  <div className="habit-list">{rescue.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
+                </div>
+              )}
               {group ? (
                 GROUPS.map((g) => {
                   const list = scheduled.filter((h) => h.timeOfDay === g.k);
@@ -151,9 +165,9 @@ export function Today() {
               ) : (
                 <div className="habit-list">{scheduled.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
               )}
-              {habits.length > scheduled.length && (
+              {habits.length > allScheduled.length && (
                 <details>
-                  <summary className="muted small" style={{ cursor: 'pointer', padding: 4 }}>No programados hoy ({habits.length - scheduled.length})</summary>
+                  <summary className="muted small" style={{ cursor: 'pointer', padding: 4 }}>No programados hoy ({habits.length - allScheduled.length})</summary>
                   <div className="habit-list" style={{ marginTop: 8, opacity: .7 }}>
                     {habits.filter((h) => !matchesDay(h, date)).map((h) => <HabitRow key={h.id} habit={h} date={date} />)}
                   </div>
@@ -166,6 +180,7 @@ export function Today() {
 
         <div className="col" style={{ gap: 16 }}>
           {habits.length > 0 && <StreakCard />}
+          {isToday && habits.length > 0 && <ForecastCard />}
           <div className="card">
             <div className="card-head">
               <h3 className="h3">¿Cómo te sentís?</h3>

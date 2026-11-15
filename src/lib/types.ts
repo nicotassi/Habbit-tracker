@@ -49,6 +49,20 @@ export interface MoodEntry {
   updatedAt: number;
 }
 
+/** Datos de salud del reloj para un día (cargados desde una captura o a mano). */
+export interface WatchMetrics {
+  sleepHours?: number;
+  sleepScore?: number;
+  steps?: number;
+  restingHr?: number;
+  hrv?: number;
+  stress?: number;
+  bodyBattery?: number;
+  calories?: number;
+  spo2?: number;
+  km?: number;
+}
+
 export interface FocusSession {
   id: string;
   habitId?: string;
@@ -98,6 +112,7 @@ export interface AppData {
   habits: Habit[];
   logs: Logs;
   moods: Record<string, MoodEntry>;
+  watch: Record<string, WatchMetrics>;
   focus: FocusSession[];
   goals: Goal[];
   reviews: Record<string, WeeklyReview>;

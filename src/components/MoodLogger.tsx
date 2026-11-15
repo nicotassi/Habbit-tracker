@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store';
 import type { MoodEntry } from '../lib/types';
 import { toast } from './ui';
+import { WatchSummary } from './WatchImport';
 
 export const MOODS = [
   { v: 1, face: '😣', label: 'Muy mal', color: '#c2483d' },
@@ -41,6 +42,7 @@ export function MoodLogger({ date, compact }: { date: string; compact?: boolean 
           </button>
         ))}
       </div>
+      <WatchSummary date={date} />
       {compact && mood && !open && (
         <button className="btn ghost sm" style={{ alignSelf: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }} onClick={() => setOpen(true)}>+ Energía, estrés, sueño, emociones, notas…</button>
       )}

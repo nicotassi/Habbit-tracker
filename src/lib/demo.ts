@@ -1,4 +1,4 @@
-import type { AppData, Habit, Logs, MoodEntry } from './types';
+import type { AppData, Habit, Logs, MoodEntry, WatchMetrics } from './types';
 import { addDays, fromKey, range, todayKey } from './date';
 import { DEFAULT_SETTINGS, uid } from './store';
 
@@ -93,11 +93,26 @@ export function buildDemo(): AppData {
   const focus = range(addDays(today, -40), today)
     .filter(() => rand() < 0.5)
     .map((d) => ({ id: uid(), minutes: 25 * (1 + Math.floor(rand() * 3)), label: 'Trabajo profundo', at: fromKey(d).getTime() + 10 * 3600000, date: d, habitId: rand() < 0.3 ? habits[6].id : undefined }));
+  // datos del reloj de ejemplo: más pasos y menos estrés los días que se caminó
+  const watch: Record<string, WatchMetrics> = {};
+  for (const [d, m] of Object.entries(moods)) {
+    if (rand() < 0.2) continue;
+    const walked = !!logs[d]?.[habits[4].id];
+    watch[d] = {
+      sleepHours: m.sleep,
+      sleepScore: Math.round(Math.min(98, 45 + (m.sleep ?? 7) * 5 + rand() * 10)),
+      steps: Math.round(3500 + rand() * 4500 + (walked ? 4500 : 0)),
+      restingHr: Math.round(54 + rand() * 8 - (walked ? 2 : 0)),
+      stress: Math.round(Math.min(90, 15 + m.stress * 9 + rand() * 10)),
+      bodyBattery: Math.round(Math.min(100, 25 + m.energy * 13 + rand() * 8)),
+    };
+  }
   return {
     version: 1,
     habits,
     logs,
     moods,
+    watch,
     focus,
     goals: [
       { id: uid(), title: 'Leer 40 veces este trimestre', habitId: habits[2].id, target: 40, deadline: addDays(today, 45), createdAt: addDays(today, -45) },

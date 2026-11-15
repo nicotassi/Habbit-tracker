@@ -1,4 +1,5 @@
 import type { AppData } from './types';
+import { rescuesCount } from './forecast';
 import { activeHabits, levelOf, perfectDayStreak, streaks, totalCompletionsAll, xpOf } from './stats';
 
 export interface Achievement {
@@ -33,6 +34,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'perfect1', emoji: '⭐', title: 'Día perfecto', desc: 'Completá todos tus hábitos en un día', check: (_, c) => c.perfect.count >= 1 },
   { id: 'perfect7', emoji: '🌟', title: 'Semana perfecta', desc: '7 días perfectos seguidos', check: (_, c) => c.perfect.best >= 7 },
   { id: 'perfect30', emoji: '✨', title: 'Mes impecable', desc: '30 días perfectos en total', check: (_, c) => c.perfect.count >= 30 },
+  { id: 'rescue5', emoji: '🛟', title: 'Rescatista', desc: 'Retomá 5 veces un hábito al día siguiente de fallarlo', check: (d) => rescuesCount(d) >= 5 },
   { id: 'mood1', emoji: '🫶', title: 'Autoconocimiento', desc: 'Registrá tu ánimo por primera vez', check: (d) => Object.keys(d.moods).length >= 1 },
   { id: 'mood30', emoji: '📖', title: 'Diario constante', desc: '30 registros de ánimo', check: (d) => Object.keys(d.moods).length >= 30 },
   { id: 'grat', emoji: '🙏', title: 'Agradecido', desc: 'Anotá 20 cosas por las que estás agradecido', check: (d) => Object.values(d.moods).reduce((s, m) => s + m.gratitude.length, 0) >= 20 },

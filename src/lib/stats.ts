@@ -439,9 +439,10 @@ export function insights(data: AppData): Insight[] {
   if (top) out.push({ icon: '💛', tone: 'good', title: `${top.habit.emoji} ${top.habit.name} te levanta el ánimo`, body: `Los días que lo hacés tu ánimo promedio es ${top.withMood.toFixed(1)} vs ${top.withoutMood.toFixed(1)} cuando no.` });
   const stressImpact = moodImpact(data, 'stress').find((i) => i.delta < -0.25);
   if (stressImpact) out.push({ icon: '🌿', tone: 'good', title: `${stressImpact.habit.emoji} ${stressImpact.habit.name} baja tu estrés`, body: `Estrés promedio ${stressImpact.withMood.toFixed(1)} cuando lo cumplís vs ${stressImpact.withoutMood.toFixed(1)} cuando no.` });
-  const sleepDays = Object.values(data.moods).filter((m) => typeof m.sleep === 'number');
+  const sleepOf = (m: MoodEntry) => m.sleep ?? data.watch?.[m.date]?.sleepHours;
+  const sleepDays = Object.values(data.moods).filter((m) => typeof sleepOf(m) === 'number');
   if (sleepDays.length >= 7) {
-    const c = pearson(sleepDays.map((m) => m.sleep as number), sleepDays.map((m) => m.mood));
+    const c = pearson(sleepDays.map((m) => sleepOf(m) as number), sleepDays.map((m) => m.mood));
     if (Math.abs(c) > 0.25) out.push({ icon: '😴', tone: c > 0 ? 'good' : 'info', title: c > 0 ? 'Dormir más = mejor ánimo' : 'El sueño no explica tu ánimo', body: `Correlación sueño-ánimo: ${c.toFixed(2)}. ${c > 0 ? 'Cuidar tus horas de sueño tiene efecto real.' : ''}` });
   }
   const ranked = habits

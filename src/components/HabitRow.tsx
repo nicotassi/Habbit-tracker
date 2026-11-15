@@ -5,6 +5,7 @@ import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../li
 import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
 import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
+import { rescueOf } from '../lib/forecast';
 
 const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
 
@@ -36,6 +37,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const st = streaks(h, logs, weekStart, date);
   const value = e?.value ?? 0;
   const beforeStart = date < h.createdAt;
+  const rescue = rescueOf(h, logs, date);
   // al cargar un día pasado, la hora queda dentro de ese día (para el gráfico de horarios)
   const stamp = () => {
     if (date === todayKey()) return undefined;
@@ -47,7 +49,10 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
     const wasDone = done;
     setEntry(date, h.id, v <= 0 && !e?.note ? null : { ...e, value: Math.max(0, v), skipped: false, at: e?.at ?? stamp() });
     const nowDone = h.kind === 'check' ? v >= 1 : v >= h.target;
-    if (!wasDone && nowDone) celebrate(el, date);
+    if (!wasDone && nowDone) {
+      celebrate(el, date);
+      if (rescue?.state === 'rescue') setTimeout(() => toast('¡Rescatado! Nunca dos veces seguidas', '🛟'), 400);
+    }
   };
 
   const step = h.kind === 'quantity' ? (h.target >= 1000 ? Math.round(h.target / 10) : h.target >= 100 ? 10 : h.target >= 20 ? 5 : 1) : 1;
@@ -64,6 +69,8 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
       <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`habit/${h.id}`)}>
         <div className="habit-name">{h.name}</div>
         <div className="habit-meta">
+          {rescue?.state === 'rescue' && <span className="badge warn">🛟 {rescue.missed === 1 ? 'Ayer no lo hiciste' : `${rescue.missed} días sin hacerlo`}</span>}
+          {rescue?.state === 'rescued' && <span className="badge good">🛟 Rescatado</span>}
           {st.current > 0 && <span>🔥 {st.current} {st.unit}</span>}
           {h.kind === 'avoid' && <span>{beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída registrada'}</span>}
           {h.timeOfDay !== 'any' && <span className="hide-mobile">{TOD[h.timeOfDay]}</span>}
