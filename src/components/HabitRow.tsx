@@ -3,7 +3,7 @@ import type { Habit } from '../lib/types';
 import { useStore, getData } from '../lib/store';
 import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../lib/stats';
 import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
-import { askText, chime, confetti, toast } from './ui';
+import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
 
 const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
@@ -17,6 +17,7 @@ export function celebrate(el: HTMLElement | null, date: string) {
   setTimeout(() => {
     const s = dayStats(getData(), date);
     const perfect = s.total > 0 && s.done === s.total;
+    floatXP(x, y - 18);
     if (settings.confetti) confetti(x, y, perfect ? 160 : 36);
     if (settings.sound) chime(perfect);
     if (perfect) toast('¡Día perfecto! Completaste todo', '🌟');

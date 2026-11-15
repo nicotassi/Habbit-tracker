@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { hasLocalData, login, signup, useCloud } from '../lib/cloud';
-import { Seg } from '../components/ui';
+import { BrandMark, Seg } from '../components/ui';
 import { InstallBanner } from '../components/Install';
 
 export function Login() {
@@ -40,9 +40,7 @@ export function Login() {
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
         <div className="col" style={{ alignItems: 'center', gap: 6, marginBottom: 18 }}>
-          <div className="brand-mark" style={{ width: 56, height: 56, borderRadius: 16 }}>
-            <svg width="34" height="34" viewBox="0 0 64 64"><path d="M8 38c7 0 7-16 14-16s7 20 14 20 7-24 14-24" fill="none" stroke="#f3d9b1" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
+          <BrandMark size={64} />
           <h1 className="title" style={{ fontSize: 44, margin: 0 }}>Ritmo</h1>
           <div className="eyebrow">Hábitos · Ánimo · Progreso</div>
         </div>

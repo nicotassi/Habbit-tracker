@@ -1,10 +1,10 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, getData } from './lib/store';
 import { navigate, useRoute } from './router';
 import { activeHabits, entryOf, isDone, isScheduled, levelOf, levelTitle, xpOf } from './lib/stats';
 import { evaluateAchievements, ACHIEVEMENTS } from './lib/achievements';
 import { todayKey } from './lib/date';
-import { Bar, chime, confetti, Dialogs, toast, Toasts } from './components/ui';
+import { Bar, BrandMark, chime, confetti, Dialogs, toast, Toasts } from './components/ui';
 import { checkTimer, PHASE_LABEL, phaseMinutes, secondsLeft, setFinishListener, useTimer } from './lib/timer';
 import { useNow } from './pages/Focus';
 import { Login } from './pages/Login';
@@ -42,11 +42,11 @@ export default function Root() {
   const accent = useStore((s) => s.settings.accent);
   useEffect(() => {
     const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      const dark = theme === 'dark' || theme === 'graphite' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = theme === 'graphite' ? 'graphite' : dark ? 'dark' : 'light';
       document.documentElement.style.setProperty('--accent', accent);
       document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${accent} 18%, var(--surface))`);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#151412' : '#f7f4ee');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'graphite' ? '#0b0b0c' : dark ? '#151412' : '#f7f4ee');
     };
     apply();
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -147,6 +147,16 @@ function App() {
 
   const xp = xpOf(data);
   const lv = levelOf(xp);
+  // aviso al subir de nivel (no al cargar la app ni al cambiar de cuenta)
+  const prevLevel = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevLevel.current;
+    prevLevel.current = lv.level;
+    if (prev !== null && lv.level === prev + 1) {
+      setTimeout(() => toast(`¡Subiste a nivel ${lv.level}: ${levelTitle(lv.level)}!`, '⭐'), 600);
+      if (getData().settings.confetti) setTimeout(() => confetti(window.innerWidth / 2, 120, 160), 600);
+    }
+  }, [lv.level]);
 
   const content = (() => {
     switch (page) {
@@ -169,9 +179,7 @@ function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">
-            <svg width="20" height="20" viewBox="0 0 64 64"><path d="M8 38c7 0 7-16 14-16s7 20 14 20 7-24 14-24" fill="none" stroke="#f3d9b1" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
+          <BrandMark size={32} />
           <span className="brand-name">Ritmo</span>
           <button className="btn ghost icon" style={{ marginLeft: 'auto' }} title="Ajustes" aria-label="Ajustes" onClick={() => navigate('ajustes')}>⚙️</button>
         </div>
@@ -200,9 +208,7 @@ function App() {
 
       <header className="topbar">
         <button className="brand" style={{ border: 0, background: 'transparent', padding: 0 }} onClick={() => go('today')}>
-          <div className="brand-mark">
-            <svg width="18" height="18" viewBox="0 0 64 64"><path d="M8 38c7 0 7-16 14-16s7 20 14 20 7-24 14-24" fill="none" stroke="#f3d9b1" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
+          <BrandMark size={30} />
           <span className="brand-name" style={{ fontSize: 24 }}>Ritmo</span>
         </button>
         <TimerPill compact />
@@ -214,7 +220,7 @@ function App() {
         </div>
       </header>
 
-      <main className="main">{content}</main>
+      <main className="main"><div className="page-anim" key={route.join("-")}>{content}</div></main>
 
       <nav className="mobile-nav">
         {NAV.filter((n) => MOBILE.includes(n.id)).map((n) => (
@@ -259,7 +265,7 @@ function Palette({ onClose, onNew }: { onClose: () => void; onNew: () => void })
     const list: { ico: string; label: string; hint?: string; run: () => void }[] = [
       { ico: '➕', label: 'Nuevo hábito', hint: 'N', run: onNew },
       ...NAV.map((n, i) => ({ ico: n.ico, label: `Ir a ${n.label}`, hint: String(i + 1), run: () => navigate(n.id) })),
-      { ico: '🌗', label: 'Cambiar tema', run: () => data.setSettings({ theme: document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark' }) },
+      { ico: '🌗', label: 'Cambiar tema', run: () => data.setSettings({ theme: document.documentElement.dataset.theme === 'light' ? 'dark' : 'light' }) },
       ...activeHabits(data).flatMap((h) => {
         const done = isDone(h, entryOf(data.logs, today, h.id), today);
         const out = [{ ico: h.emoji, label: `Ver ${h.name}`, hint: 'estadísticas', run: () => navigate(`habit/${h.id}`) }];

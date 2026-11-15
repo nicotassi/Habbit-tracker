@@ -1,5 +1,5 @@
 // Ritmo: cache de la app para abrir rápido y sin conexión. Los datos viajan a Supabase y nunca se cachean.
-const CACHE = 'ritmo-v2';
+const CACHE = 'ritmo-v3';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}).then(() => self.skipWaiting()));

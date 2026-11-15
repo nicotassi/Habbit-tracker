@@ -79,7 +79,7 @@ export interface WeeklyReview {
 
 export interface Settings {
   name: string;
-  theme: 'light' | 'dark' | 'system';
+  theme: 'light' | 'dark' | 'graphite' | 'system';
   weekStart: 0 | 1;
   accent: string;
   notifications: boolean;

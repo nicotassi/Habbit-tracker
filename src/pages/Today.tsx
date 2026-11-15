@@ -4,7 +4,8 @@ import { activeHabits, dayStats, insights, levelOf, matchesDay, levelTitle, perf
 import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_LETTER, weekStartOf } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
-import { Bar, DateNav, Empty, Ring } from '../components/ui';
+import { CountUp, DateNav, Empty, Ring } from '../components/ui';
+import { MonthGrid, StreakCard } from '../components/MonthGrid';
 import { HabitForm } from '../components/HabitForm';
 import type { TimeOfDay } from '../lib/types';
 import { navigate } from '../router';
@@ -99,15 +100,17 @@ export function Today() {
             </div>
           </div>
         </div>
-        <div className="card col" style={{ justifyContent: 'space-between' }}>
-          <div>
-            <div className="row between">
-              <span className="eyebrow">Nivel {lv.level}</span>
-              <span className="badge">{xp} XP</span>
+        <div className="card col level-hero" style={{ justifyContent: 'space-between' }}>
+          <div className="row" style={{ gap: 18 }}>
+            <Ring value={lv.progress} size={104} stroke={8} color="var(--accent)">
+              <div className="level-num"><CountUp value={lv.level} /></div>
+              <div className="tiny muted" style={{ letterSpacing: '.12em' }}>NIVEL</div>
+            </Ring>
+            <div className="grow">
+              <div className="serif" style={{ fontSize: 30, lineHeight: 1.05 }}>{levelTitle(lv.level)}</div>
+              <div className="level-xp"><CountUp value={xp} /> XP</div>
+              <div className="tiny muted">{lv.toNext} XP para el nivel {lv.level + 1}</div>
             </div>
-            <div className="serif" style={{ fontSize: 34, lineHeight: 1.1, margin: '6px 0 10px' }}>{levelTitle(lv.level)}</div>
-            <Bar value={lv.progress} />
-            <div className="tiny muted" style={{ marginTop: 6 }}>{lv.toNext} XP para el próximo nivel</div>
           </div>
           <div className="row between" style={{ marginTop: 14 }}>
             <div><div className="serif" style={{ fontSize: 28 }}>🔥 {pd.current}</div><div className="tiny muted">días perfectos seguidos</div></div>
@@ -158,9 +161,11 @@ export function Today() {
               )}
             </>
           )}
+          {habits.length > 0 && <MonthGrid />}
         </div>
 
         <div className="col" style={{ gap: 16 }}>
+          {habits.length > 0 && <StreakCard />}
           <div className="card">
             <div className="card-head">
               <h3 className="h3">¿Cómo te sentís?</h3>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 
 export function Ring({ value, size = 120, stroke = 10, color = 'var(--accent)', track = 'var(--bg-2)', children }: {
@@ -61,7 +61,7 @@ export function Stat({ k, v, sub, unit }: { k: string; v: ReactNode; sub?: React
     <div className="stat">
       <span className="k">{k}</span>
       <span className="v">
-        {v}
+        <Animated v={v} />
         {unit && <small> {unit}</small>}
       </span>
       {sub && <span className="small">{sub}</span>}
@@ -248,5 +248,67 @@ export function DateNav({ date, onChange, max }: { date: string; onChange: (d: s
         onChange={(e) => e.target.value && e.target.value <= max && onChange(e.target.value)} />
       <button className="btn icon" type="button" onClick={() => shift(1)} disabled={date >= max} aria-label="Día siguiente">›</button>
     </div>
+  );
+}
+
+/* ---------- Números que cuentan hacia arriba ---------- */
+const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+export function CountUp({ value, decimals = 0, duration = 750 }: { value: number; decimals?: number; duration?: number }) {
+  const [shown, setShown] = useState(reduceMotion() ? value : 0);
+  const from = useRef(0);
+  useEffect(() => {
+    if (reduceMotion()) { setShown(value); return; }
+    const start = performance.now();
+    const a = from.current;
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / duration);
+      const e = 1 - Math.pow(1 - k, 3);
+      setShown(a + (value - a) * e);
+      if (k < 1) raf = requestAnimationFrame(tick);
+      else from.current = value;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); from.current = value; };
+  }, [value, duration]);
+  return <>{shown.toLocaleString('es', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
+}
+
+/** Envuelve un valor de estadística: si es un número (o texto numérico) lo anima. */
+export function Animated({ v }: { v: ReactNode }) {
+  if (typeof v === 'number' && isFinite(v)) return <CountUp value={v} />;
+  if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) return <CountUp value={Number(v)} decimals={(v.split('.')[1] ?? '').length} />;
+  return <>{v}</>;
+}
+
+/* ---------- "+10 XP" flotante ---------- */
+export function floatXP(x: number, y: number, text = '+10 XP') {
+  const el = document.createElement('div');
+  el.className = 'xp-float';
+  el.textContent = text;
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+/* ---------- Logo ---------- */
+export function BrandMark({ size = 30 }: { size?: number }) {
+  // ids propios: si hay dos logos y uno está oculto, el otro igual pinta sus degradados
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+  return (
+    <svg className="brand-svg" width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <linearGradient id={`bm-bg-${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2d2a27" /><stop offset="1" stopColor="#0d0c0b" /></linearGradient>
+        <linearGradient id={`bm-st-${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#f3d9b1" /><stop offset="1" stopColor="#d27a4c" /></linearGradient>
+        <radialGradient id={`bm-gl-${id}`} cx=".5" cy="0" r=".9"><stop offset="0" stopColor="#fff" stopOpacity=".22" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+      </defs>
+      <rect width="64" height="64" rx="15" fill={`url(#bm-bg-${id})`} />
+      <rect width="64" height="64" rx="15" fill={`url(#bm-gl-${id})`} />
+      <rect x=".75" y=".75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1.5" />
+      <path d="M13 39c6 0 6-15 12.5-15S32 43 38.5 43 45 20 51 20" fill="none" stroke="#000" strokeOpacity=".45" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 2)" />
+      <path d="M13 39c6 0 6-15 12.5-15S32 43 38.5 43 45 20 51 20" fill="none" stroke={`url(#bm-st-${id})`} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -458,3 +458,20 @@ export function insights(data: AppData): Insight[] {
   if (pd.current >= 2) out.push({ icon: '🔥', tone: 'good', title: `${pd.current} días perfectos seguidos`, body: `Tu récord es ${pd.best}. No cortes la cadena.` });
   return out;
 }
+
+/** Días seguidos con al menos un hábito cumplido (hoy pendiente no corta la racha). */
+export function activityStreak(data: AppData, today = todayKey()) {
+  const habits = activeHabits(data);
+  const active = (d: string) => habits.some((h) => isScheduled(h, d) && isDone(h, entryOf(data.logs, d, h.id), d) && !(h.kind === 'avoid' && !entryOf(data.logs, d, h.id) && d === today));
+  const start = habits.reduce((m, h) => (h.createdAt < m ? h.createdAt : m), today);
+  let best = 0;
+  let run = 0;
+  for (const d of range(start, today)) {
+    run = active(d) ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  let current = 0;
+  for (let d = active(today) ? today : addDays(today, -1); d >= start && active(d); d = addDays(d, -1)) current++;
+  const last7 = range(addDays(today, -6), today).map((d) => ({ date: d, on: active(d) }));
+  return { current, best, last7, todayDone: active(today) };
+}

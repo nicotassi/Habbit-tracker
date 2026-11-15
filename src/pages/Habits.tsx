@@ -4,6 +4,7 @@ import type { Habit } from '../lib/types';
 import { completionRate, strength, streaks, totalCompletions } from '../lib/stats';
 import { addDays, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { HabitForm } from '../components/HabitForm';
+import { MonthGrid } from '../components/MonthGrid';
 import { askConfirm, Bar, Empty, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 
@@ -52,6 +53,8 @@ export function Habits() {
         </div>
         <button className="btn primary" onClick={() => { setEdit(null); setOpen(true); }}>+ Nuevo hábito</button>
       </div>
+
+      {view === 'active' && <div style={{ marginBottom: 16 }}><MonthGrid /></div>}
 
       <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
         <Seg value={view} onChange={setView} options={[{ v: 'active', l: 'Activos' }, { v: 'archived', l: 'Archivados' }]} />

@@ -41,11 +41,12 @@ export function Settings() {
           <h3 className="h3">Perfil y apariencia</h3>
           <div className="field"><label className="label">Tu nombre</label><input className="input" value={settings.name} onChange={(e) => setSettings({ name: e.target.value })} placeholder="¿Cómo te llamamos?" /></div>
           <div className="field"><span className="label">Tema</span>
-            <Seg value={settings.theme} onChange={(t) => setSettings({ theme: t })} options={[{ v: 'light', l: '☀️ Claro' }, { v: 'dark', l: '🌙 Oscuro' }, { v: 'system', l: '💻 Sistema' }]} />
+            <Seg value={settings.theme} onChange={(t) => setSettings(t === 'graphite' && settings.accent === '#c8643b' ? { theme: t, accent: '#d4d7de' } : t !== 'graphite' && settings.accent === '#d4d7de' ? { theme: t, accent: '#c8643b' } : { theme: t })}
+              options={[{ v: 'light', l: '☀️ Claro' }, { v: 'dark', l: '🌙 Oscuro' }, { v: 'graphite', l: '◼️ Grafito' }, { v: 'system', l: '💻 Sistema' }]} />
           </div>
           <div className="field"><span className="label">Color de acento</span>
             <div className="swatches">
-              {['#c8643b', '#8b7fd1', '#3f8f7a', '#4ea3d9', '#d16ba5', '#c9a227', '#1c1b19'].map((c) => (
+              {['#c8643b', '#d4d7de', '#8b7fd1', '#3f8f7a', '#4ea3d9', '#d16ba5', '#c9a227', '#1c1b19'].map((c) => (
                 <button key={c} className={`swatch ${settings.accent === c ? 'on' : ''}`} style={{ background: c }} onClick={() => setSettings({ accent: c })} />
               ))}
             </div>
