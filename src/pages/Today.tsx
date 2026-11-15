@@ -7,6 +7,7 @@ import { MoodLogger } from '../components/MoodLogger';
 import { CountUp, DateNav, Empty, Ring } from '../components/ui';
 import { MonthGrid, StreakCard } from '../components/MonthGrid';
 import { ForecastCard } from '../components/Forecast';
+import { CoachBrief } from './Coach';
 import { rescueOf } from '../lib/forecast';
 import { HabitForm } from '../components/HabitForm';
 import type { TimeOfDay } from '../lib/types';
@@ -67,6 +68,8 @@ export function Today() {
           <button className="btn primary hide-mobile" onClick={() => setFormOpen(true)}>+ Nuevo hábito</button>
         </div>
       </div>
+
+      {isToday && <CoachBrief />}
 
       {!isToday && (
         <div className="past-banner">

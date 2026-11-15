@@ -613,3 +613,23 @@ button.forecast-item:hover { border-color: var(--line-2); }
 .watch-found.ok { background: color-mix(in srgb, var(--good) 12%, var(--surface)); color: var(--good); }
 .watch-found.none { background: var(--bg-2); color: var(--ink-2); }
 .watch-raw { white-space: pre-wrap; font-size: 12px; max-height: 160px; overflow: auto; background: var(--bg-2); border-radius: 10px; padding: 10px; margin: 8px 0 0; }
+
+/* ---------- Cómo vas ---------- */
+.coach-brief { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; margin-bottom: 16px; color: var(--ink); cursor: pointer; }
+.coach-brief:hover { border-color: var(--line-2); }
+.coach-tip { margin-top: 2px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.coach-headline { font-size: clamp(28px, 4vw, 40px); line-height: 1.05; letter-spacing: -0.02em; margin-top: 2px; }
+.area-tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); min-width: 0; }
+:root[data-theme='graphite'] .area-tile { background: linear-gradient(180deg, #161618, #111113); }
+.area-tile.good { border-top: 3px solid var(--good); }
+.area-tile.warn { border-top: 3px solid var(--warn); }
+.area-tile.bad { border-top: 3px solid var(--bad); }
+.area-num { font-family: var(--serif); font-size: 40px; line-height: 1.1; letter-spacing: -0.02em; margin: 4px 0 2px; }
+.area-dot { width: 10px; height: 10px; border-radius: 50%; }
+.coach-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); border-left-width: 3px; }
+.coach-note.good { border-left-color: var(--good); }
+.coach-note.warn { border-left-color: var(--warn); }
+.coach-note.bad { border-left-color: var(--bad); }
+.coach-note.info { border-left-color: var(--lav); }
+.cn-ico { font-size: 18px; line-height: 1.3; }
+.area-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }

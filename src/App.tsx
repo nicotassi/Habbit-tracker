@@ -21,9 +21,11 @@ import { Focus } from './pages/Focus';
 import { Goals } from './pages/Goals';
 import { Achievements } from './pages/Achievements';
 import { Settings } from './pages/Settings';
+import { Coach } from './pages/Coach';
 
 const NAV = [
   { id: 'today', ico: '☀️', label: 'Hoy' },
+  { id: 'coach', ico: '🧭', label: 'Cómo vas' },
   { id: 'habits', ico: '🌱', label: 'Hábitos' },
   { id: 'analytics', ico: '📊', label: 'Análisis' },
   { id: 'mood', ico: '🫶', label: 'Ánimo' },
@@ -169,6 +171,7 @@ function App() {
       case 'goals': return <Goals />;
       case 'achievements': return <Achievements />;
       case 'ajustes': return <Settings />;
+      case 'coach': return <Coach />;
       default: return <Today />;
     }
   })();
@@ -190,8 +193,8 @@ function App() {
         </button>
         {NAV.map((n, i) => (
           <Fragment key={n.id}>
-            {i === 5 && <div className="nav-section">Crecimiento</div>}
-            {i === 8 && <div className="nav-section">Sistema</div>}
+            {i === 6 && <div className="nav-section">Crecimiento</div>}
+            {i === 9 && <div className="nav-section">Sistema</div>}
             <button className={`nav-item ${active === n.id ? 'active' : ''}`} onClick={() => navigate(n.id)}>
               <span className="ico">{n.ico}</span>{n.label}
             </button>

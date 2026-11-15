@@ -41,6 +41,12 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - **Nunca dos veces seguidas:** si fallaste un hábito el último día que tocaba, hoy aparece primero en “Rescate”, con aviso al recuperarlo (y logro “Rescatista”).
 - **Pronóstico:** avisa los hábitos que solés fallar en el día de la semana de hoy y proyecta cuándo llegás a 66 días seguidos (hábito automático) o a fuerza 80% (consolidado).
 
+**Cómo vas (análisis sin IA)**
+- Informe diario con puntaje de 0 a 100 y cuatro áreas con semáforo: Constancia, Descanso, Movimiento y Mente.
+- Compara tus datos recientes con tu propia normal (últimas 4 semanas), detecta tendencias de 2 semanas y encuentra patrones entre hábitos y salud, el mismo día y al día siguiente (por ejemplo, cómo dormís después de entrenar).
+- Recomendaciones por reglas (día de recuperación, estrés alto, hábitos en rescate o en riesgo) y resumen semanal con logros, cosas para mejorar y una sugerencia concreta.
+- Todo se calcula en el dispositivo (`src/lib/coach.ts`), es gratis y siempre muestra el dato que respalda cada conclusión.
+
 **Datos del reloj**
 - Subís una captura de la app de tu reloj y se lee en el propio celular (OCR con Tesseract.js, gratis y sin enviar la imagen a ningún servidor): sueño, puntaje de sueño, pasos, FC en reposo, VFC, estrés, Body Battery, calorías, oxígeno y distancia. Revisás los números antes de guardar; también se pueden cargar a mano.
 - En Ánimo, “Tu reloj” muestra la evolución de cada dato y qué hábitos lo mueven.
