@@ -10,6 +10,7 @@ import { useNow } from './pages/Focus';
 import { Login } from './pages/Login';
 import { startSync, useCloud } from './lib/cloud';
 import { InstallBanner } from './components/Install';
+import { StopwatchBar, TimeChooser } from './components/HabitTimer';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
 import { Habits } from './pages/Habits';
@@ -55,6 +56,9 @@ export default function Root() {
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, [theme, accent]);
+  // tamaño del texto: escala el contenido de las pantallas (las barras fijas quedan igual)
+  const fontScale = useStore((s) => s.settings.fontScale ?? 1);
+  useEffect(() => { document.documentElement.style.setProperty('--ui-zoom', String(fontScale)); }, [fontScale]);
   useEffect(() => (session ? startSync() : undefined), [session?.user, session?.token]); // eslint-disable-line
   return session ? <App /> : <><Login /><Toasts /><Dialogs /></>;
 }
@@ -253,6 +257,8 @@ function App() {
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
       <InstallBanner />
+      <StopwatchBar />
+      <TimeChooser />
       <Toasts />
       <Dialogs />
     </div>

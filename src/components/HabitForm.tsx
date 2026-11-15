@@ -135,6 +135,22 @@ export function HabitForm({ open, onClose, habit }: { open: boolean; onClose: ()
           </span>
         </div>
 
+        {d.kind !== 'avoid' && (
+          <div className="field">
+            <span className="label">Cómo se cumple</span>
+            <Seg<'mark' | 'time'>
+              value={d.trackTime ? 'time' : 'mark'}
+              onChange={(v) => set({ trackTime: v === 'time' })}
+              options={[{ v: 'mark', l: '✓ Solo marcar' }, { v: 'time', l: '⏱ Cuenta tiempo' }]}
+            />
+            <span className="tiny muted" style={{ marginTop: 6 }}>
+              {d.trackTime
+                ? 'Aparece un botón ▶ para iniciarlo con cronómetro o pomodoro, y se registra cuánto tiempo le dedicaste cada día.'
+                : 'Se marca con un toque, sin cronómetro.'}
+            </span>
+          </div>
+        )}
+
         {(d.kind === 'count' || d.kind === 'quantity') && (
           <div className="grid g2">
             <div className="field">

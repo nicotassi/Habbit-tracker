@@ -44,6 +44,17 @@ export function Settings() {
             <Seg value={settings.theme} onChange={(t) => setSettings(t === 'graphite' && settings.accent === '#c8643b' ? { theme: t, accent: '#d4d7de' } : t !== 'graphite' && settings.accent === '#d4d7de' ? { theme: t, accent: '#c8643b' } : { theme: t })}
               options={[{ v: 'light', l: '☀️ Claro' }, { v: 'dark', l: '🌙 Oscuro' }, { v: 'graphite', l: '◼️ Grafito' }, { v: 'system', l: '💻 Sistema' }]} />
           </div>
+          <div className="field"><span className="label">Tamaño de letra</span>
+            <Seg<number> value={settings.fontScale ?? 1} onChange={(v) => setSettings({ fontScale: v })}
+              options={[
+                { v: 0.88, l: <span style={{ fontSize: 11 }}>A</span> },
+                { v: 0.94, l: <span style={{ fontSize: 13 }}>A</span> },
+                { v: 1, l: <span style={{ fontSize: 15 }}>A</span> },
+                { v: 1.08, l: <span style={{ fontSize: 17 }}>A</span> },
+                { v: 1.16, l: <span style={{ fontSize: 19 }}>A</span> },
+              ]} />
+            <span className="tiny muted" style={{ marginTop: 6 }}>La del medio es el tamaño normal. Se guarda en tu cuenta.</span>
+          </div>
           <div className="field"><span className="label">Color de acento</span>
             <div className="swatches">
               {['#c8643b', '#d4d7de', '#8b7fd1', '#3f8f7a', '#4ea3d9', '#d16ba5', '#c9a227', '#1c1b19'].map((c) => (

@@ -22,7 +22,7 @@ export function Heatmap({ values, weeks = 26, color = 'var(--accent)', weekStart
   }, [weeks, weekStart]);
   const today = todayKey();
   return (
-    <div>
+    <div className="heat-wrap">
       <div className="heat-months">
         {cols.map((c, i) => {
           const d = fromKey(c[0]);

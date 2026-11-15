@@ -21,6 +21,8 @@ export interface Habit {
   timeOfDay: TimeOfDay;
   reminder?: string; // "HH:MM"
   why?: string; // motivación personal
+  /** "Cuenta tiempo": se puede iniciar con cronómetro o pomodoro y se registra cuánto le dedicaste */
+  trackTime?: boolean;
   createdAt: string; // ISO date YYYY-MM-DD
   archived: boolean;
   order: number;
@@ -31,6 +33,7 @@ export interface Entry {
   note?: string;
   skipped?: boolean; // día justificado (no rompe racha)
   at?: number; // timestamp
+  seconds?: number; // tiempo dedicado ese día
 }
 
 /** logs[date][habitId] */
@@ -108,6 +111,8 @@ export interface Settings {
   pomoEvery: number; // pomodoros antes del descanso largo
   pomoGoal: number; // pomodoros por día
   pomoAuto: boolean; // arrancar la siguiente fase sola
+  /** tamaño del texto: 0.88 … 1.16 (1 = normal) */
+  fontScale: number;
 }
 
 export interface AppData {

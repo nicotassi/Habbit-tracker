@@ -12,6 +12,7 @@ import { addDays, range, shortDate, todayKey, WEEKDAYS_SHORT, weekStartOf } from
 import { Heatmap } from '../components/Heatmap';
 import { Bar, ChartTooltip, Empty, Seg, Stat } from '../components/ui';
 import { navigate } from '../router';
+import { TimeByHabit } from '../components/TimeStats';
 
 type Span = 7 | 30 | 90 | 365;
 
@@ -230,6 +231,8 @@ export function Analytics() {
             </ResponsiveContainer>
           ) : <div className="small muted">Registrá tu ánimo varios días (y no siempre cumplas todo 😉) para ver correlaciones.</div>}
         </div>
+
+        <TimeByHabit days={range(addDays(today, -(span - 1)), today)} />
 
         <div className="card">
           <div className="card-head"><div><h3 className="h3">¿A qué hora?</h3><span className="sub">Cuándo marcás tus hábitos</span></div></div>

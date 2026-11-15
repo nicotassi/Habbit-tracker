@@ -6,6 +6,7 @@ import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
 import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
 import { rescueOf } from '../lib/forecast';
+import { fmtDuration, TimeButton } from './HabitTimer';
 
 const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
 
@@ -86,6 +87,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
             </span>
           )}
           {e?.skipped && <span>⏸ Día salteado</span>}
+          {!!e?.seconds && <span>⏱ {fmtDuration(e.seconds)}</span>}
           {e?.note && <span title={e.note}>📝 {e.note.slice(0, 28)}{e.note.length > 28 ? '…' : ''}</span>}
         </div>
       </div>
@@ -102,6 +104,8 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
           <button onClick={(ev) => commit(value + step, ev.currentTarget)} aria-label="sumar">+</button>
         </div>
       )}
+
+      {h.trackTime && h.kind !== 'avoid' && date === todayKey() && <TimeButton habit={h} />}
 
       {h.kind === 'check' && (
         <button className={`checkbtn ${done ? 'on' : ''}`} style={done ? { background: h.color } : undefined} onClick={(ev) => commit(done ? 0 : 1, ev.currentTarget)} aria-label="completar">
@@ -128,9 +132,22 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
         {menu && (
           <div className="card" style={{ position: 'absolute', right: 0, top: 40, zIndex: 20, padding: 6, width: 210 }} onMouseLeave={() => setMenu(false)}>
             <button className="menu-item"
-              onClick={async () => { setMenu(false); const n = await askText('Nota para este día', e?.note ?? '', { multiline: true, ok: 'Guardar nota' }); if (n !== null) setEntry(date, h.id, { value: e?.value ?? 0, skipped: e?.skipped, note: n }); }}>
+              onClick={async () => { setMenu(false); const n = await askText('Nota para este día', e?.note ?? '', { multiline: true, ok: 'Guardar nota' }); if (n !== null) setEntry(date, h.id, { ...e, value: e?.value ?? 0, note: n }); }}>
               📝 Agregar nota
             </button>
+            {h.kind !== 'avoid' && (
+              <button className="menu-item"
+                onClick={async () => {
+                  setMenu(false);
+                  const r = await askText('Tiempo dedicado este día (minutos)', e?.seconds ? String(Math.round(e.seconds / 60)) : '', { ok: 'Guardar', body: 'Reemplaza el tiempo registrado. Dejalo vacío para borrarlo.' });
+                  if (r === null) return;
+                  const m = Number(r.replace(',', '.'));
+                  if (r.trim() !== '' && (!isFinite(m) || m < 0)) return toast('Escribí los minutos con números', '⚠️');
+                  setEntry(date, h.id, { ...e, value: e?.value ?? 0, seconds: r.trim() === '' ? undefined : Math.round(m * 60) });
+                }}>
+                ⏱ {e?.seconds ? 'Ajustar' : 'Cargar'} tiempo
+              </button>
+            )}
             <button className="menu-item"
               onClick={() => { setEntry(date, h.id, e?.skipped ? null : { value: 0, skipped: true, note: e?.note }); setMenu(false); toast(e?.skipped ? 'Salteo quitado' : 'Día salteado: no rompe tu racha', '⏸'); }}>
               ⏸ {e?.skipped ? 'Quitar salteo' : 'Saltear hoy (justificado)'}

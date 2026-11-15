@@ -10,6 +10,7 @@ import { navigate } from '../router';
 import { freqLabel, kindLabel } from './Habits';
 import { HabitRow } from '../components/HabitRow';
 import { HabitForecast } from '../components/Forecast';
+import { HabitTimeCard } from '../components/TimeStats';
 
 export function HabitDetail({ id }: { id: string }) {
   const data = useStore();
@@ -164,6 +165,8 @@ export function HabitDetail({ id }: { id: string }) {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        <HabitTimeCard habit={h} />
 
         <HabitForecast habit={h} />
 

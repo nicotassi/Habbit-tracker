@@ -113,9 +113,11 @@ function logSession(phase: Phase, minutes: number, habitId: string, label: strin
   if (!h) return;
   const d = todayKey();
   const e = entryOf(getData().logs, d, h.id);
-  if (h.kind === 'check') useStore.getState().setEntry(d, h.id, { ...e, value: 1 });
-  else if (h.kind === 'quantity' && /min/i.test(h.unit ?? '')) useStore.getState().setEntry(d, h.id, { ...e, value: (e?.value ?? 0) + minutes });
-  else if (h.kind === 'count') useStore.getState().setEntry(d, h.id, { ...e, value: (e?.value ?? 0) + 1 });
+  const seconds = (e?.seconds ?? 0) + minutes * 60;
+  if (h.kind === 'check') useStore.getState().setEntry(d, h.id, { ...e, value: 1, seconds });
+  else if (h.kind === 'quantity' && /min/i.test(h.unit ?? '')) useStore.getState().setEntry(d, h.id, { ...e, value: (e?.value ?? 0) + minutes, seconds });
+  else if (h.kind === 'count') useStore.getState().setEntry(d, h.id, { ...e, value: (e?.value ?? 0) + 1, seconds });
+  else useStore.getState().setEntry(d, h.id, { value: e?.value ?? 0, ...e, seconds });
 }
 
 /** Termina la fase actual ahora, registrando lo hecho. */

@@ -22,6 +22,7 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - 4 tipos: Sí/No, Contador (vasos de agua), Cantidad con unidad (min, páginas, km, $) y **Evitar** (malos hábitos: cada día limpio cuenta).
 - Frecuencias: todos los días, días específicos o X veces por semana.
 - Emoji, color, categoría, momento del día, recordatorio y “por qué lo hacés”.
+- **Cómo se cumple:** “Solo marcar” o “Cuenta tiempo”. Los que cuentan tiempo tienen un botón ▶ para iniciarlos con cronómetro (con pausa, sigue aunque cierres la app) o pomodoro; al terminar se guarda el tiempo dedicado y, si querés, se marca como hecho. Los hábitos en minutos suman lo cronometrado. El tiempo también se puede cargar o ajustar a mano, y se ve en el detalle de cada hábito y en Análisis.
 - Notas por día, “saltear día justificado” (no rompe la racha), archivar, reordenar, plantillas rápidas.
 
 **Ánimo y diario**
@@ -58,7 +59,7 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Objetivos con ritmo necesario (“necesitás ~3 por semana”) y revisión semanal.
 - XP, niveles y 26 logros desbloqueables. Confeti y sonido al completar.
 - Paleta de comandos (⌘K / Ctrl+K), atajos de teclado (N, 1–8).
-- Tema claro/oscuro/sistema y color de acento.
+- Tema claro/oscuro/grafito/sistema, color de acento y tamaño de letra (5 niveles).
 - Exportar backup JSON / CSV e importar.
 
 ## Cuentas y datos en la nube

@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pomoEvery: 4,
   pomoGoal: 8,
   pomoAuto: false,
+  fontScale: 1,
 };
 
 export const emptyData = (): AppData => ({
