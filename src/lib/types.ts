@@ -52,6 +52,7 @@ export interface MoodEntry {
 /** Datos de salud del reloj para un día (cargados desde una captura o a mano). */
 export interface WatchMetrics {
   sleepHours?: number;
+  deepSleepHours?: number;
   sleepScore?: number;
   steps?: number;
   restingHr?: number;
@@ -60,6 +61,8 @@ export interface WatchMetrics {
   bodyBattery?: number;
   calories?: number;
   spo2?: number;
+  vo2max?: number;
+  weightKg?: number;
   km?: number;
 }
 

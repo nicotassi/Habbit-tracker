@@ -150,13 +150,13 @@ export function WatchSummary({ date }: { date: string }) {
   const m = useStore((s) => s.watch[date]);
   const [open, setOpen] = useState(false);
   const fmt = (k: keyof WatchMetrics, v: number) =>
-    k === 'sleepHours' ? `${Math.floor(v)} h ${String(Math.round((v % 1) * 60)).padStart(2, '0')}` : k === 'steps' || k === 'calories' ? v.toLocaleString('es') : String(v);
+    k === 'sleepHours' || k === 'deepSleepHours' ? `${Math.floor(v)} h ${String(Math.round((v % 1) * 60)).padStart(2, '0')}` : k === 'steps' || k === 'calories' ? v.toLocaleString('es') : String(v);
   return (
     <div className="watch-summary">
       {m ? (
         <div className="row wrap" style={{ gap: 6 }}>
           {WATCH_FIELDS.filter((f) => m[f.key] !== undefined).map((f) => (
-            <span key={f.key} className="chip" title={f.label}>{f.icon} {fmt(f.key, m[f.key]!)}{f.unit && f.unit !== '/100' && f.key !== 'sleepHours' ? ` ${f.unit}` : ''}</span>
+            <span key={f.key} className="chip" title={f.label}>{f.icon} {fmt(f.key, m[f.key]!)}{f.unit && f.unit !== '/100' && f.key !== 'sleepHours' && f.key !== 'deepSleepHours' ? ` ${f.unit}` : ''}</span>
           ))}
           <button className="btn ghost sm" onClick={() => setOpen(true)}>Editar</button>
         </div>
