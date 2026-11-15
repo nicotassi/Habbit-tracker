@@ -7,6 +7,9 @@ import { todayKey } from './lib/date';
 import { Bar, chime, confetti, Dialogs, toast, Toasts } from './components/ui';
 import { checkTimer, PHASE_LABEL, phaseMinutes, secondsLeft, setFinishListener, useTimer } from './lib/timer';
 import { useNow } from './pages/Focus';
+import { Login } from './pages/Login';
+import { startSync, useCloud } from './lib/cloud';
+import { InstallBanner } from './components/Install';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
 import { Habits } from './pages/Habits';
@@ -32,7 +35,29 @@ const NAV = [
 ];
 const MOBILE = ['today', 'habits', 'analytics', 'mood', 'focus'];
 
-export default function App() {
+/** Puerta de entrada: sin sesión muestra el login; con sesión, la app y la sincronización con la nube. */
+export default function Root() {
+  const session = useCloud((s) => s.session);
+  const theme = useStore((s) => s.settings.theme);
+  const accent = useStore((s) => s.settings.accent);
+  useEffect(() => {
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.documentElement.style.setProperty('--accent', accent);
+      document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${accent} 18%, var(--surface))`);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#151412' : '#f7f4ee');
+    };
+    apply();
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [theme, accent]);
+  useEffect(() => (session ? startSync() : undefined), [session?.user, session?.token]); // eslint-disable-line
+  return session ? <App /> : <><Login /><Toasts /><Dialogs /></>;
+}
+
+function App() {
   const route = useRoute();
   const page = route[0] ?? 'today';
   const data = useStore();
@@ -61,20 +86,6 @@ export default function App() {
     return () => { clearInterval(i); document.removeEventListener('visibilitychange', vis); };
   }, []);
 
-  // Tema
-  useEffect(() => {
-    const apply = () => {
-      const dark = data.settings.theme === 'dark' || (data.settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      document.documentElement.style.setProperty('--accent', data.settings.accent);
-      document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${data.settings.accent} 18%, var(--surface))`);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#151412' : '#f7f4ee');
-    };
-    apply();
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, [data.settings.theme, data.settings.accent]);
 
   // Logros
   useEffect(() => {
@@ -165,6 +176,7 @@ export default function App() {
           <button className="btn ghost icon" style={{ marginLeft: 'auto' }} title="Ajustes" aria-label="Ajustes" onClick={() => navigate('ajustes')}>⚙️</button>
         </div>
         <TimerPill />
+        <div style={{ padding: '0 6px 10px' }}><SyncDot label /></div>
         <button className="nav-item" onClick={() => setPalette(true)} style={{ border: '1px solid var(--line)', marginBottom: 10, color: 'var(--ink-3)' }}>
           <span className="ico">🔎</span><span className="grow">Buscar…</span><kbd>⌘K</kbd>
         </button>
@@ -194,6 +206,7 @@ export default function App() {
           <span className="brand-name" style={{ fontSize: 24 }}>Ritmo</span>
         </button>
         <TimerPill compact />
+        <SyncDot />
         <div className="row" style={{ gap: 2, marginLeft: 'auto' }}>
           <button className="btn ghost icon" aria-label="Nuevo hábito" onClick={() => setNewHabit(true)}>＋</button>
           <button className="btn ghost icon" aria-label="Buscar" onClick={() => setPalette(true)}>🔎</button>
@@ -230,6 +243,7 @@ export default function App() {
 
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
+      <InstallBanner />
       <Toasts />
       <Dialogs />
     </div>
@@ -293,6 +307,18 @@ function TimerPill({ compact }: { compact?: boolean }) {
   return (
     <button className={`timer-pill ${isBreak ? 'break' : ''} ${compact ? 'compact' : ''}`} onClick={() => navigate('focus')} aria-label={`${PHASE_LABEL[t.phase]}: quedan ${mm}`}>
       <span>{isBreak ? '☕' : '🍅'}</span><b>{mm}</b>{!compact && <span className="muted">{PHASE_LABEL[t.phase]}</span>}
+    </button>
+  );
+}
+
+/** Punto de estado de la sincronización con la nube. */
+function SyncDot({ label }: { label?: boolean }) {
+  const status = useCloud((s) => s.status);
+  const user = useCloud((s) => s.session?.user);
+  const text = { idle: 'Conectado', saving: 'Guardando…', saved: 'Guardado en la nube', offline: 'Sin conexión: se guarda al volver', error: 'Error al guardar' }[status];
+  return (
+    <button className={`sync-dot ${status}`} title={text} aria-label={text} onClick={() => navigate('ajustes')}>
+      <span className="dot" />{label && <span className="small"><b>@{user}</b> · {text}</span>}
     </button>
   );
 }

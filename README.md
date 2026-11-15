@@ -47,11 +47,22 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Tema claro/oscuro/sistema y color de acento.
 - Exportar backup JSON / CSV e importar.
 
-Los datos se guardan localmente en el navegador (localStorage).
+## Cuentas y datos en la nube
+
+Cada persona crea su cuenta con **usuario + PIN** desde la pantalla de inicio y entra desde cualquier celular o compu. Los datos se guardan en **Supabase** (proyecto compartido, tablas y funciones con prefijo `ritmo_`; ver `supabase/ritmo.sql`):
+
+- El PIN se guarda encriptado (bcrypt) y nunca queda en el navegador; el dispositivo guarda solo un token de sesión.
+- Las tablas están cerradas (RLS sin políticas): la app solo puede llamar a las funciones `ritmo_*`, que validan la sesión.
+- 8 intentos fallidos bloquean el usuario 15 minutos.
+- Cada cambio se sube solo; al volver a la app se traen los cambios hechos en otro dispositivo. El navegador guarda una copia para abrir rápido y funcionar sin conexión, y se borra al cerrar sesión.
+
+## Instalar en el celular
+
+Al abrir el link en el navegador del celular aparece un cartel para instalar Ritmo (botón directo en Android/Chrome, instrucciones de “Agregar a inicio” en iPhone). También está en Ajustes.
 
 ## Versión de un solo archivo
 
-`npm run build:single` genera `dist/ritmo-single.html`: un HTML autocontenido (JS y CSS embebidos) que se puede publicar en cualquier lado, por ejemplo como Artifact de claude.ai para abrirlo desde el celular. Dentro de ese visor las descargas están bloqueadas, así que el backup se hace con **Copiar backup / Pegar backup**.
+`npm run build:single` (versión sin cuentas, anterior a la nube) genera `dist/ritmo-single.html`: un HTML autocontenido (JS y CSS embebidos) que se puede publicar en cualquier lado, por ejemplo como Artifact de claude.ai para abrirlo desde el celular. Dentro de ese visor las descargas están bloqueadas, así que el backup se hace con **Copiar backup / Pegar backup**.
 
 ## Stack
 React 18 + TypeScript + Vite, Zustand (estado persistente), Recharts (gráficos).

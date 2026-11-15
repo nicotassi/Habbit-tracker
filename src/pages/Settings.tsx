@@ -5,6 +5,8 @@ import { copyBackup, exportCSV, exportJSON, parseBackup, readBackup } from '../l
 import type { AppData } from '../lib/types';
 import { askConfirm, askText, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
+import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
+import { InstallCard } from '../components/Install';
 
 // Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
 const embedded = window.top !== window;
@@ -33,6 +35,7 @@ export function Settings() {
   return (
     <div>
       <div className="page-head"><div><div className="eyebrow">Ajustes</div><h1 className="title">Tu <em>espacio</em></h1></div></div>
+      <AccountCard />
       <div className="grid g2">
         <div className="card col" style={{ gap: 18 }}>
           <h3 className="h3">Perfil y apariencia</h3>
@@ -60,9 +63,10 @@ export function Settings() {
         </div>
 
         <div className="col" style={{ gap: 16 }}>
+          <InstallCard />
           <div className="card col" style={{ gap: 12 }}>
             <h3 className="h3">Tus datos</h3>
-            <p className="small muted" style={{ margin: 0 }}>Todo se guarda en este navegador, en este dispositivo. Para pasar tus datos a otro, usá Copiar backup y Pegar backup. {habits.length} hábitos · {Object.keys(moods).length} registros de ánimo.</p>
+            <p className="small muted" style={{ margin: 0 }}>Todo se guarda en la nube con tu cuenta. También podés descargar o copiar un backup cuando quieras. {habits.length} hábitos · {Object.keys(moods).length} registros de ánimo.</p>
             <div className="row wrap">
               {!embedded && <button className="btn" onClick={exportJSON}>⬇️ Backup (JSON)</button>}
               {!embedded && <button className="btn" onClick={exportCSV}>📄 Exportar CSV</button>}
@@ -95,7 +99,13 @@ export function Settings() {
           </div>
           <div className="card col" style={{ gap: 12, borderColor: 'color-mix(in srgb, var(--bad) 30%, var(--line))' }}>
             <h3 className="h3" style={{ color: 'var(--bad)' }}>Zona de peligro</h3>
-            <div><button className="btn danger" onClick={async () => { if (await askConfirm('¿Borrar todos los datos?', { body: 'Se eliminan hábitos, registros de ánimo, objetivos y logros. No se puede deshacer.', danger: true, ok: 'Borrar todo' })) { reset(); toast('Datos borrados', '🗑️'); } }}>Borrar todo</button></div>
+            <p className="small muted" style={{ margin: 0 }}>“Borrar todo” vacía tus datos pero mantiene la cuenta. “Eliminar cuenta” borra la cuenta y todos sus datos de la nube.</p>
+            <div><button className="btn danger" onClick={async () => { if (await askConfirm('¿Borrar todos los datos?', { body: 'Se eliminan hábitos, registros de ánimo, objetivos y logros. No se puede deshacer.', danger: true, ok: 'Borrar todo' })) { reset(); toast('Datos borrados', '🗑️'); } }}>Borrar todo</button>
+              <button className="btn danger" style={{ marginLeft: 8 }} onClick={async () => {
+                const pin = await askText('Eliminar la cuenta', '', { body: 'Se borran tu usuario y todos tus datos de la nube. No se puede deshacer. Escribí tu PIN para confirmar.', ok: 'Eliminar cuenta' });
+                if (!pin) return;
+                try { await deleteAccount(pin); toast('Cuenta eliminada', '👋'); } catch (e) { toast(e instanceof Error ? e.message : 'No se pudo eliminar', '⚠️'); }
+              }}>Eliminar cuenta</button></div>
           </div>
         </div>
       </div>
@@ -111,5 +121,42 @@ function Toggle({ label, on, set }: { label: string; on: boolean; set: (v: boole
         <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: 'var(--surface)', transition: 'left .2s' }} />
       </button>
     </label>
+  );
+}
+
+function AccountCard() {
+  const { session, status, lastSync, error } = useCloud();
+  if (!session) return null;
+  const label = { idle: 'Conectado', saving: 'Guardando…', saved: 'Todo guardado en la nube', offline: 'Sin conexión: los cambios se suben cuando vuelva internet', error: 'No se pudo guardar' }[status];
+  const doChangePin = async () => {
+    const old = await askText('PIN actual', '', { ok: 'Seguir' });
+    if (!old) return;
+    const nw = await askText('PIN nuevo (4 a 12 números)', '', { ok: 'Seguir' });
+    if (!nw) return;
+    const again = await askText('Repetí el PIN nuevo', '', { ok: 'Cambiar PIN' });
+    if (again !== nw) return toast('Los PIN no coinciden', '⚠️');
+    try { await changePin(old, nw); toast('PIN cambiado. Se cerraron las sesiones de otros dispositivos.', '🔐'); }
+    catch (e) { toast(e instanceof Error ? e.message : 'No se pudo cambiar', '⚠️'); }
+  };
+  return (
+    <div className="card account-card" style={{ marginBottom: 16 }}>
+      <div className="row wrap" style={{ gap: 14 }}>
+        <div className="account-avatar">{(session.name || session.user).slice(0, 1).toUpperCase()}</div>
+        <div className="grow">
+          <div style={{ fontWeight: 600 }}>{session.name || session.user} <span className="muted small">@{session.user}</span></div>
+          <div className={`small sync-text ${status}`}>
+            <span className={`sync-dot ${status}`}><span className="dot" /></span> {label}
+            {lastSync && status === 'saved' && <span className="muted"> · {new Date(lastSync).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>}
+          </div>
+          {status === 'error' && error && <div className="tiny" style={{ color: 'var(--bad)' }}>{error}</div>}
+        </div>
+        <div className="row wrap" style={{ gap: 6 }}>
+          <button className="btn sm" onClick={async () => { await flush(); await pull(); toast('Sincronizado', '☁️'); }}>☁️ Sincronizar</button>
+          <button className="btn sm" onClick={doChangePin}>🔐 Cambiar PIN</button>
+          <button className="btn sm" onClick={async () => { if (await askConfirm('¿Cerrar sesión?', { body: 'Tus datos quedan guardados en la nube. En este dispositivo se borra la copia local; para volver a verlos entrá con tu usuario y PIN.', ok: 'Cerrar sesión' })) await logout(); }}>Cerrar sesión</button>
+        </div>
+      </div>
+      <p className="tiny muted" style={{ margin: '12px 0 0' }}>Para usar Ritmo en otro celular o compu, abrí el mismo link y entrá con <b>@{session.user}</b> y tu PIN. Otra persona puede crear su propia cuenta desde la pantalla de inicio.</p>
+    </div>
   );
 }
