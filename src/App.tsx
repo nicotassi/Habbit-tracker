@@ -28,8 +28,8 @@ import { Coach } from './pages/Coach';
 import { Day } from './pages/Day';
 
 const NAV = [
-  { id: 'dia', ico: '🕒', label: 'Mi día' },
   { id: 'today', ico: '☀️', label: 'Hoy' },
+  { id: 'dia', ico: '🕒', label: 'Mi día' },
   { id: 'coach', ico: '🧭', label: 'Cómo vas' },
   { id: 'habits', ico: '🌱', label: 'Hábitos' },
   { id: 'analytics', ico: '📊', label: 'Análisis' },
