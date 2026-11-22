@@ -11,6 +11,7 @@ import { Login } from './pages/Login';
 import { startSync, useCloud } from './lib/cloud';
 import { InstallBanner } from './components/Install';
 import { StopwatchBar, TimeChooser } from './components/HabitTimer';
+import { slotFor } from './lib/schedule';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
 import { Habits } from './pages/Habits';
@@ -124,7 +125,9 @@ function App() {
       const d = getData();
       const today = todayKey();
       for (const h of activeHabits(d)) {
-        if (h.reminder !== hhmm || !isScheduled(h, today) || isDone(h, entryOf(d.logs, today, h.id), today)) continue;
+        // aviso a la hora del recordatorio, o si no tiene, a la hora de inicio de su horario
+        const at = h.reminder || slotFor(h, today)?.start;
+        if (at !== hhmm || !isScheduled(h, today) || isDone(h, entryOf(d.logs, today, h.id), today)) continue;
         const key = `${today}-${h.id}`;
         if (fired.has(key)) continue;
         fired.add(key);

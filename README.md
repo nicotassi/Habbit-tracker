@@ -21,6 +21,7 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 **Hábitos (sin límite)**
 - 4 tipos: Sí/No, Contador (vasos de agua), Cantidad con unidad (min, páginas, km, $) y **Evitar** (malos hábitos: cada día limpio cuenta).
 - Frecuencias: todos los días, días específicos o X veces por semana.
+- **Horario** opcional: el mismo cada día o distinto por día de la semana (desde y, si querés, hasta). En Hoy los hábitos se ordenan por hora, se ubican solos en mañana/tarde/noche y muestran “Ahora”, “En 15 min” o “Atrasado”; el recordatorio avisa a la hora de inicio.
 - Emoji, color, categoría, momento del día, recordatorio y “por qué lo hacés”.
 - **Cómo se cumple:** “Solo marcar” o “Cuenta tiempo”. Los que cuentan tiempo tienen un botón ▶ para iniciarlos con cronómetro (con pausa, sigue aunque cierres la app) o pomodoro; al terminar se guarda el tiempo dedicado y, si querés, se marca como hecho. Los hábitos en minutos suman lo cronometrado. El tiempo también se puede cargar o ajustar a mano, y se ve en el detalle de cada hábito y en Análisis.
 - Notas por día, “saltear día justificado” (no rompe la racha), archivar, reordenar, plantillas rápidas.

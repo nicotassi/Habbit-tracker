@@ -20,12 +20,26 @@ export interface Habit {
   category: string;
   timeOfDay: TimeOfDay;
   reminder?: string; // "HH:MM"
+  /** Horario fijo: el mismo todos los días o uno distinto por día de la semana */
+  schedule?: HabitSchedule;
   why?: string; // motivación personal
   /** "Cuenta tiempo": se puede iniciar con cronómetro o pomodoro y se registra cuánto le dedicaste */
   trackTime?: boolean;
   createdAt: string; // ISO date YYYY-MM-DD
   archived: boolean;
   order: number;
+}
+
+export interface TimeSlot {
+  start: string; // "HH:MM"
+  end?: string; // "HH:MM", opcional
+}
+
+export interface HabitSchedule {
+  mode: 'same' | 'perDay';
+  slot?: TimeSlot;
+  /** día de la semana (0 = domingo … 6 = sábado) → horario */
+  perDay?: Record<number, TimeSlot>;
 }
 
 export interface Entry {

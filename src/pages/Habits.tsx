@@ -5,6 +5,7 @@ import { completionRate, strength, streaks, totalCompletions } from '../lib/stat
 import { addDays, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { HabitForm } from '../components/HabitForm';
 import { MonthGrid } from '../components/MonthGrid';
+import { scheduleSummary } from '../lib/schedule';
 import { askConfirm, Bar, Empty, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 
@@ -79,7 +80,7 @@ export function Habits() {
                   <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`habit/${h.id}`)}>
                     <div className="habit-name">{h.name}</div>
                     <div className="habit-meta">
-                      <span>{freqLabel(h)}</span><span>· {kindLabel(h)}</span><span>· {h.category}</span>
+                      <span>{freqLabel(h)}</span>{scheduleSummary(h) && <span>· 🕐 {scheduleSummary(h)}</span>}<span>· {kindLabel(h)}</span><span>· {h.category}</span>
                     </div>
                   </div>
                   {view === 'active' && (

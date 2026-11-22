@@ -6,6 +6,7 @@ import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
 import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
 import { rescueOf } from '../lib/forecast';
+import { fmtSlot, slotFor, slotStatus } from '../lib/schedule';
 import { fmtDuration, TimeButton } from './HabitTimer';
 
 const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
@@ -39,6 +40,8 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const value = e?.value ?? 0;
   const beforeStart = date < h.createdAt;
   const rescue = rescueOf(h, logs, date);
+  const slot = slotFor(h, date);
+  const status = slot && date === todayKey() && !done ? slotStatus(slot) : null;
   // al cargar un día pasado, la hora queda dentro de ese día (para el gráfico de horarios)
   const stamp = () => {
     if (date === todayKey()) return undefined;
@@ -74,7 +77,9 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
           {rescue?.state === 'rescued' && <span className="badge good">🛟 Rescatado</span>}
           {st.current > 0 && <span>🔥 {st.current} {st.unit}</span>}
           {h.kind === 'avoid' && <span>{beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída registrada'}</span>}
-          {h.timeOfDay !== 'any' && <span className="hide-mobile">{TOD[h.timeOfDay]}</span>}
+          {slot ? (
+            <span>🕐 {fmtSlot(slot)}{status && <b className={`slot-badge ${status.kind}`}> · {status.label}</b>}</span>
+          ) : h.timeOfDay !== 'any' && <span className="hide-mobile">{TOD[h.timeOfDay]}</span>}
           {weekly !== null && h.frequency.type === 'perWeek' && (
             <span className="row" style={{ gap: 6 }}>
               {weekly}/{h.frequency.times} esta semana

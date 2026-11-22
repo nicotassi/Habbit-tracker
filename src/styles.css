@@ -686,3 +686,26 @@ button.forecast-item:hover { border-color: var(--line-2); }
 @media (max-width: 480px) { .level-hero .row { gap: 12px !important; } .level-hero .serif { font-size: clamp(20px, 7vw, 30px) !important; } }
 .hero .grow, .hero .serif { overflow-wrap: anywhere; }
 .week-strip { zoom: calc(1 / var(--ui-zoom, 1)); } /* los círculos de la semana no crecen con la letra */
+
+/* ---------- Horario del hábito ---------- */
+.slot-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.slot-row .input { width: auto; flex: 1 1 110px; min-width: 0; }
+.slot-field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 130px; min-width: 0; }
+.slot-field .input { width: 100%; }
+.slot-day { width: 38px; font-weight: 600; font-size: 13px; }
+.slot-copy { flex-basis: 100%; justify-content: flex-start; padding-left: 46px; }
+.slot-badge { font-weight: 600; }
+.slot-badge.now { color: var(--accent); }
+.slot-badge.soon { color: var(--lav); }
+.slot-badge.late { color: var(--warn); }
+/* horario por día: día | desde | hasta, siempre en un renglón */
+.slot-grid { display: grid; grid-template-columns: 40px minmax(0, 1fr) 14px minmax(0, 1fr); align-items: center; gap: 6px; }
+.slot-grid .input { width: 100%; min-width: 0; padding-left: 8px; padding-right: 6px; }
+.slot-grid .slot-copy { grid-column: 2 / -1; padding-left: 0; }
+.slot-grid .muted { text-align: center; }
+.day-picks { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; max-width: 320px; }
+.day-picks .chip { justify-content: center; padding: 6px 0; }
+@media (max-width: 480px) {
+  .slot-grid input[type='time']::-webkit-calendar-picker-indicator { display: none; }
+  .slot-grid { grid-template-columns: 34px minmax(0, 1fr) 10px minmax(0, 1fr); gap: 5px; }
+}

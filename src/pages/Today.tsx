@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { activeHabits, dayStats, insights, levelOf, matchesDay, levelTitle, perfectDayStreak, xpOf } from '../lib/stats';
 import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_LETTER, weekStartOf } from '../lib/date';
@@ -9,6 +9,7 @@ import { MonthGrid, StreakCard } from '../components/MonthGrid';
 import { ForecastCard } from '../components/Forecast';
 import { CoachBrief } from './Coach';
 import { rescueOf } from '../lib/forecast';
+import { effectiveTimeOfDay, startMinutes } from '../lib/schedule';
 import { HabitForm } from '../components/HabitForm';
 import type { TimeOfDay } from '../lib/types';
 import { navigate } from '../router';
@@ -39,12 +40,18 @@ export function Today() {
   const data = useStore();
   const [date, setDate] = useState(todayKey());
   const [formOpen, setFormOpen] = useState(false);
+  // cada minuto se refresca el estado de los horarios ("Ahora", "En 15 min", "Atrasado")
+  const [, setMinute] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setMinute((x) => x + 1), 60000);
+    return () => clearInterval(i);
+  }, []);
   const [group, setGroup] = useState(true);
   const habits = activeHabits(data);
   const allScheduled = habits.filter((h) => matchesDay(h, date));
   // "nunca dos veces seguidas": los que se fallaron el último día programado van primero
   const rescue = allScheduled.filter((h) => rescueOf(h, data.logs, date));
-  const scheduled = allScheduled.filter((h) => !rescue.includes(h));
+  const scheduled = allScheduled.filter((h) => !rescue.includes(h)).sort((a, b) => startMinutes(a, date) - startMinutes(b, date));
   const s = dayStats(data, date);
   const xp = xpOf(data);
   const lv = levelOf(xp);
@@ -156,7 +163,7 @@ export function Today() {
               )}
               {group ? (
                 GROUPS.map((g) => {
-                  const list = scheduled.filter((h) => h.timeOfDay === g.k);
+                  const list = scheduled.filter((h) => effectiveTimeOfDay(h, date) === g.k);
                   if (!list.length) return null;
                   return (
                     <div key={g.k}>
