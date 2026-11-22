@@ -779,3 +779,13 @@ button.forecast-item:hover { border-color: var(--line-2); }
 .tl-block.compact .tlb-time { flex-shrink: 2; min-width: 0; }
 .tl-block:hover { z-index: 20 !important; }
 .tl-block.compact.narrow .tlb-time { display: none; } /* bloque corto y corrido: el nombre primero */
+
+/* ---------- Aviso de versión nueva ---------- */
+.update-banner {
+  position: fixed; z-index: 46; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  top: calc(64px + env(safe-area-inset-top, 0px)); max-width: 440px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 16px;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 16px;
+  box-shadow: var(--shadow-lg); font-size: 14px; animation: rise .25s;
+}
+@media (min-width: 821px) { .update-banner { top: 16px; } }

@@ -8,9 +8,10 @@ import { Bar, BrandMark, chime, confetti, Dialogs, toast, Toasts } from './compo
 import { checkTimer, PHASE_LABEL, phaseMinutes, secondsLeft, setFinishListener, useTimer } from './lib/timer';
 import { useNow } from './pages/Focus';
 import { Login } from './pages/Login';
-import { startSync, useCloud } from './lib/cloud';
+import { flush, startSync, useCloud } from './lib/cloud';
+import { applyUpdate, checkForUpdate, useUpdate } from './lib/update';
 import { InstallBanner } from './components/Install';
-import { StopwatchBar, TimeChooser } from './components/HabitTimer';
+import { StopwatchBar, TimeChooser, useStopwatch } from './components/HabitTimer';
 import { slotFor } from './lib/schedule';
 import { HabitForm } from './components/HabitForm';
 import { Today } from './pages/Today';
@@ -27,8 +28,8 @@ import { Coach } from './pages/Coach';
 import { Day } from './pages/Day';
 
 const NAV = [
-  { id: 'today', ico: '☀️', label: 'Hoy' },
   { id: 'dia', ico: '🕒', label: 'Mi día' },
+  { id: 'today', ico: '☀️', label: 'Hoy' },
   { id: 'coach', ico: '🧭', label: 'Cómo vas' },
   { id: 'habits', ico: '🌱', label: 'Hábitos' },
   { id: 'analytics', ico: '📊', label: 'Análisis' },
@@ -39,7 +40,7 @@ const NAV = [
   { id: 'achievements', ico: '🏆', label: 'Logros' },
   { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
 ];
-const MOBILE = ['today', 'habits', 'analytics', 'mood', 'focus'];
+const MOBILE = ['today', 'dia', 'habits', 'analytics', 'focus'];
 
 /** Puerta de entrada: sin sesión muestra el login; con sesión, la app y la sincronización con la nube. */
 export default function Root() {
@@ -63,7 +64,38 @@ export default function Root() {
   const fontScale = useStore((s) => s.settings.fontScale ?? 1);
   useEffect(() => { document.documentElement.style.setProperty('--ui-zoom', String(fontScale)); }, [fontScale]);
   useEffect(() => (session ? startSync() : undefined), [session?.user, session?.token]); // eslint-disable-line
-  return session ? <App /> : <><Login /><Toasts /><Dialogs /></>;
+
+  // Versiones nuevas: se revisa al abrir, cada 15 minutos y al volver a la app.
+  // Al volver a la app (o al abrirla) se actualiza sola si no hay nada a medio hacer; si no, aparece el botón "Actualizar".
+  useEffect(() => {
+    const busy = () => !!document.querySelector('.overlay, .sheet-overlay') || !!useStopwatch.getState().habitId;
+    const check = async (autoApply: boolean) => {
+      if (!(await checkForUpdate())) return;
+      if (autoApply && !busy()) {
+        await flush().catch(() => {});
+        applyUpdate();
+      }
+    };
+    const first = setTimeout(() => check(true), 3000);
+    const every = setInterval(() => check(false), 15 * 60 * 1000);
+    const onVisible = () => document.visibilityState === 'visible' && check(true);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearTimeout(first); clearInterval(every); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+
+  return session ? <App /> : <><Login /><UpdateBanner /><Toasts /><Dialogs /></>;
+}
+
+/** Aviso de versión nueva con botón para actualizar. */
+function UpdateBanner() {
+  const available = useUpdate((s) => s.available);
+  if (!available) return null;
+  return (
+    <div className="update-banner" role="status">
+      <span>✨ Hay una versión nueva de Ritmo</span>
+      <button className="btn sm primary" onClick={async () => { await flush().catch(() => {}); applyUpdate(); }}>Actualizar</button>
+    </div>
+  );
 }
 
 function App() {
@@ -263,6 +295,7 @@ function App() {
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
       <InstallBanner />
+      <UpdateBanner />
       <StopwatchBar />
       <TimeChooser />
       <Toasts />

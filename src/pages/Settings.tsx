@@ -7,6 +7,7 @@ import { askConfirm, askText, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
 import { InstallCard } from '../components/Install';
+import { applyUpdate, checkForUpdate } from '../lib/update';
 
 // Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
 const embedded = window.top !== window;
@@ -76,6 +77,18 @@ export function Settings() {
 
         <div className="col" style={{ gap: 16 }}>
           <InstallCard />
+          <div className="card col" style={{ gap: 10 }}>
+            <h3 className="h3">🔄 Versión de la app</h3>
+            <p className="small muted" style={{ margin: 0 }}>
+              Versión del {new Date(__BUILD_TIME__).toLocaleString('es', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.
+              La app se actualiza sola al abrirla; si querés, podés buscar una versión nueva ahora.
+            </p>
+            <div><button className="btn" onClick={async () => {
+              toast('Buscando…', '🔄');
+              if (await checkForUpdate()) { toast('Hay una versión nueva: actualizando', '✨'); await flush().catch(() => {}); applyUpdate(); }
+              else toast('Ya tenés la última versión', '✅');
+            }}>Buscar actualización</button></div>
+          </div>
           <div className="card col" style={{ gap: 12 }}>
             <h3 className="h3">Tus datos</h3>
             <p className="small muted" style={{ margin: 0 }}>Todo se guarda en la nube con tu cuenta. También podés descargar o copiar un backup cuando quieras. {habits.length} hábitos · {Object.keys(moods).length} registros de ánimo.</p>
