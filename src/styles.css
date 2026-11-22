@@ -709,3 +709,73 @@ button.forecast-item:hover { border-color: var(--line-2); }
   .slot-grid input[type='time']::-webkit-calendar-picker-indicator { display: none; }
   .slot-grid { grid-template-columns: 34px minmax(0, 1fr) 10px minmax(0, 1fr); gap: 5px; }
 }
+
+/* ---------- Mi día: bloques de mañana, tarde y noche ---------- */
+:root { --sec-morning: #e9a23b; --sec-afternoon: #d4703f; --sec-evening: #6f63c9; }
+:root[data-theme='dark'], :root[data-theme='graphite'] { --sec-morning: #e7b45c; --sec-afternoon: #e08a5c; --sec-evening: #9d8cff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --sec-morning: #e7b45c; --sec-afternoon: #e08a5c; --sec-evening: #9d8cff; } }
+.day-view { display: flex; flex-direction: column; }
+.day-strip { display: flex; gap: 4px; }
+.ds-seg {
+  min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.ds-seg.current { box-shadow: 0 0 0 2px var(--sec); }
+.ds-seg.morning { --sec: var(--sec-morning); } .ds-seg.afternoon { --sec: var(--sec-afternoon); } .ds-seg.evening { --sec: var(--sec-evening); }
+.ds-top { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-count { font-size: 12px; color: var(--ink-3); }
+.ds-bar { height: 5px; border-radius: 99px; background: color-mix(in srgb, var(--sec) 18%, transparent); overflow: hidden; }
+.ds-bar i { display: block; height: 100%; background: var(--sec); border-radius: 99px; transition: width .4s; }
+
+.day-sector {
+  --sec: var(--ink-3);
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--sec); border-radius: 16px;
+  padding: 12px 12px 14px; margin-bottom: 12px; scroll-margin-top: 12px;
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--sec) 7%, transparent), transparent 120px);
+}
+.day-sector.morning { --sec: var(--sec-morning); } .day-sector.afternoon { --sec: var(--sec-afternoon); } .day-sector.evening { --sec: var(--sec-evening); }
+.day-sector.anytime { --sec: var(--line-2); }
+:root[data-theme='graphite'] .day-sector { background-color: #131315; }
+.dsec-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.dsec-title { font-family: var(--serif); font-size: 22px; line-height: 1.1; }
+.dsec-count { margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--sec); }
+.day-sector.anytime .dsec-count { color: var(--ink-3); }
+.dsec-loose { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px dashed var(--line); }
+.day-chip {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 10px; border-radius: 999px; font-size: 13.5px;
+  border: 1px solid color-mix(in srgb, var(--hc) 45%, var(--line)); background: color-mix(in srgb, var(--hc) 10%, var(--surface)); color: var(--ink);
+}
+.day-chip.done { background: color-mix(in srgb, var(--hc) 28%, var(--surface)); }
+.day-chip.done .dc-name { text-decoration: line-through; color: var(--ink-3); }
+.dc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dc-check { color: var(--hc); }
+
+.timeline { position: relative; margin-top: 8px; }
+.tl-hour { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); height: 0; }
+.tl-hour span { position: absolute; top: -8px; left: 0; font-size: 11px; color: var(--ink-3); background: var(--surface); padding-right: 6px; font-variant-numeric: tabular-nums; }
+:root[data-theme='graphite'] .tl-hour span { background: #131315; }
+.tl-block {
+  position: absolute; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; text-align: left; overflow: hidden;
+  padding: 5px 8px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--hc) 45%, transparent); border-left: 4px solid var(--hc);
+  background: color-mix(in srgb, var(--hc) 14%, var(--surface)); color: var(--ink); box-shadow: var(--shadow); z-index: 1;
+}
+.tl-block:hover { z-index: 2; filter: brightness(1.02); }
+.tl-block.done { background: color-mix(in srgb, var(--hc) 30%, var(--surface)); }
+.tl-block.done .tlb-name { text-decoration: line-through; color: var(--ink-2); }
+.tl-block.now { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.tl-block.late { border-style: dashed; border-left-style: solid; }
+.tl-block.compact { flex-direction: row; align-items: center; gap: 8px; padding-top: 2px; padding-bottom: 2px; }
+.tlb-main { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 600; font-size: 13.5px; }
+.tlb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tlb-time { font-size: 11.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-block.late .tlb-time { color: var(--warn); }
+.tl-block.now .tlb-time { color: var(--accent); font-weight: 600; }
+.tl-now { position: absolute; left: 44px; right: 0; height: 0; border-top: 2px solid var(--bad); z-index: 3; pointer-events: none; }
+.tl-now::before { content: ''; position: absolute; left: -5px; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: var(--bad); }
+.tl-now span { position: absolute; right: 0; top: -18px; font-size: 10.5px; font-weight: 700; color: var(--bad); background: var(--surface); padding: 0 4px; border-radius: 4px; }
+@media (max-width: 480px) { .ds-top { font-size: 11.5px; } .ds-seg { padding: 7px 8px; } .dsec-title { font-size: 20px; } }
+/* en los bloques cortos, primero se achica la hora y no el nombre */
+.tl-block.compact .tlb-main { flex-shrink: 1; min-width: 0; }
+.tl-block.compact .tlb-time { flex-shrink: 2; min-width: 0; }
+.tl-block:hover { z-index: 20 !important; }
+.tl-block.compact.narrow .tlb-time { display: none; } /* bloque corto y corrido: el nombre primero */

@@ -39,6 +39,9 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Insights automáticos en lenguaje natural.
 - Página de detalle por hábito: evolución de la fuerza, heatmap, día de la semana, valores vs meta, mes a mes, impacto en el ánimo, notas.
 
+**Mi día**
+- Vista del día en bloques de Mañana, Tarde y Noche (en Hoy con el selector “Lista | Mi día”, o como pantalla propia). Cada bloque muestra primero los hábitos de ese momento sin hora fija y debajo una línea de tiempo por horas con los que tienen horario, del alto de su duración; los que se superponen se ven en cascada. Línea de “ahora”, resumen por bloque con lo hecho, y al final los hábitos “en cualquier momento”. Se puede mirar cualquier día, incluso futuros para planificar.
+
 **Rescate y pronóstico**
 - **Nunca dos veces seguidas:** si fallaste un hábito el último día que tocaba, hoy aparece primero en “Rescate”, con aviso al recuperarlo (y logro “Rescatista”).
 - **Pronóstico:** avisa los hábitos que solés fallar en el día de la semana de hoy y proyecta cuándo llegás a 66 días seguidos (hábito automático) o a fuerza 80% (consolidado).

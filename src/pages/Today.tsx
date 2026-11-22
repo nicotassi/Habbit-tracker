@@ -4,7 +4,8 @@ import { activeHabits, dayStats, insights, levelOf, matchesDay, levelTitle, perf
 import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_LETTER, weekStartOf } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
-import { CountUp, DateNav, Empty, Ring } from '../components/ui';
+import { CountUp, DateNav, Empty, Ring, Seg } from '../components/ui';
+import { DayView } from '../components/DayView';
 import { MonthGrid, StreakCard } from '../components/MonthGrid';
 import { ForecastCard } from '../components/Forecast';
 import { CoachBrief } from './Coach';
@@ -40,6 +41,9 @@ export function Today() {
   const data = useStore();
   const [date, setDate] = useState(todayKey());
   const [formOpen, setFormOpen] = useState(false);
+  // vista de los hábitos: lista o "Mi día" por bloques (se recuerda la última elegida)
+  const [view, setViewState] = useState<'list' | 'day'>(() => { try { return localStorage.getItem('ritmo-today-view') === 'day' ? 'day' : 'list'; } catch { return 'list'; } });
+  const setView = (v: 'list' | 'day') => { setViewState(v); try { localStorage.setItem('ritmo-today-view', v); } catch { /* sin almacenamiento */ } };
   // cada minuto se refresca el estado de los horarios ("Ahora", "En 15 min", "Atrasado")
   const [, setMinute] = useState(0);
   useEffect(() => {
@@ -150,8 +154,9 @@ export function Today() {
             <>
               <div className="row between">
                 <h2 className="h2">Hábitos</h2>
-                <button className="btn ghost sm" onClick={() => setGroup((g) => !g)}>{group ? 'Ver lista simple' : 'Agrupar por momento'}</button>
+                <Seg<'list' | 'day'> value={view} onChange={setView} options={[{ v: 'list', l: '☰ Lista' }, { v: 'day', l: '🕒 Mi día' }]} />
               </div>
+              {view === 'day' ? <DayView date={date} /> : <>
               {rescue.length > 0 && (
                 <div className="rescue-group">
                   <div className="rescue-head">
@@ -175,6 +180,7 @@ export function Today() {
               ) : (
                 <div className="habit-list">{scheduled.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
               )}
+              <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => setGroup((g) => !g)}>{group ? 'Ver lista simple' : 'Agrupar por momento'}</button>
               {habits.length > allScheduled.length && (
                 <details>
                   <summary className="muted small" style={{ cursor: 'pointer', padding: 4 }}>No programados hoy ({habits.length - allScheduled.length})</summary>
@@ -183,6 +189,7 @@ export function Today() {
                   </div>
                 </details>
               )}
+              </>}
             </>
           )}
           {habits.length > 0 && <MonthGrid />}
