@@ -79,7 +79,7 @@ export function Habits() {
                 <div className="habit-emoji" style={{ background: `color-mix(in srgb, ${h.color} 16%, transparent)` }}>{h.emoji}</div>
                 <div className="grow">
                   <div className="habit-name">{h.name}</div>
-                  <div className="habit-meta"><span>{freqLabel(h)}</span>{sched && <span>🕐 {sched}</span>}</div>
+                  <div className="habit-meta">{h.nonNegotiable && <span className="m-nn">🔒 No negociable</span>}<span>{freqLabel(h)}</span>{sched && <span>🕐 {sched}</span>}</div>
                 </div>
                 {sorting ? (
                   <div className="row" style={{ gap: 2 }}>

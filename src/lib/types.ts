@@ -25,6 +25,8 @@ export interface Habit {
   why?: string; // motivación personal
   /** "Cuenta tiempo": se puede iniciar con cronómetro o pomodoro y se registra cuánto le dedicaste */
   trackTime?: boolean;
+  /** No negociable: lo que hay que hacer sí o sí (va primero y se destaca) */
+  nonNegotiable?: boolean;
   createdAt: string; // ISO date YYYY-MM-DD
   archived: boolean;
   order: number;

@@ -14,6 +14,7 @@ import { Bar, ChartTooltip, Empty, Seg, Stat } from '../components/ui';
 import { navigate } from '../router';
 import { TimeByHabit } from '../components/TimeStats';
 import { MonthGrid, StreakCard } from '../components/MonthGrid';
+import { nonNegotiableStats } from '../lib/stats';
 
 type Span = 7 | 30 | 90 | 365;
 
@@ -102,7 +103,10 @@ export function Analytics() {
       </div>
 
       <div className="grid g3" style={{ marginBottom: 16 }}>
-        <StreakCard />
+        <div className="col" style={{ gap: 16, minWidth: 0 }}>
+          <StreakCard />
+          <NonNegotiableCard days={range(addDays(today, -(span - 1)), today)} />
+        </div>
         <div className="span2" style={{ minWidth: 0 }}><MonthGrid /></div>
       </div>
 
@@ -275,6 +279,22 @@ export function Analytics() {
           })()}
         </div>
         </>)}
+      </div>
+    </div>
+  );
+}
+
+/** Cumplimiento de los no negociables en el período y racha de días con todos hechos. */
+function NonNegotiableCard({ days }: { days: string[] }) {
+  const data = useStore();
+  if (!data.habits.some((h) => h.nonNegotiable && !h.archived)) return null;
+  const s = nonNegotiableStats(data, days);
+  return (
+    <div className="card nn-card">
+      <div className="card-head" style={{ marginBottom: 8 }}><h3 className="h3">🔒 No negociables</h3><span className="sub">en el período</span></div>
+      <div className="grid g2" style={{ gap: 10 }}>
+        <Stat k="Cumplidos" v={Math.round(s.rate * 100)} unit="%" sub={<span className="muted">{s.done} de {s.total}</span>} />
+        <Stat k="Racha de días completos" v={s.streak} sub={<span className="muted">{s.fullDays} de {s.daysWith} días completos</span>} />
       </div>
     </div>
   );

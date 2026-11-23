@@ -2,7 +2,7 @@
 // Compara cada dato con tu propia normal (últimas 4 semanas), detecta tendencias,
 // busca patrones entre hábitos y salud (el mismo día y al día siguiente) y redacta recomendaciones.
 import type { AppData, Habit } from './types';
-import { activeHabits, dayStats, entryOf, isDone, isScheduled, mean, streaks } from './stats';
+import { activeHabits, dayStats, entryOf, isDone, isScheduled, mean, nonNegotiableDay, nonNegotiableStats, streaks } from './stats';
 import { milestonesOf, rescueOf, risksFor } from './forecast';
 import { addDays, range, todayKey } from './date';
 
@@ -356,11 +356,20 @@ export function recommendations(data: AppData, today = todayKey()): Note[] {
     if (score !== undefined && score >= 75) out.push({ icon: '🚀', tone: 'good', text: pick(['Venís con todo: buen día para sumar un poco más a tu hábito más difícil.', 'Estás en buena forma: aprovechá para adelantar algo que venís postergando.'], today) });
   }
 
+  // no negociables: van antes que cualquier otra recomendación
+  const nn = nonNegotiableDay(data, today);
+  if (nn.total) {
+    const names = nn.pending.map((h) => `${h.emoji} ${h.name}`).join(', ');
+    const hour = new Date().getHours();
+    if (nn.complete) out.unshift({ icon: '🔒', tone: 'good', text: 'Cumpliste tus no negociables de hoy. Todo lo demás es extra.' });
+    else if (hour >= 15) out.unshift({ icon: '🔒', tone: 'warn', text: `Te ${nn.pending.length === 1 ? 'falta 1 no negociable' : `faltan ${nn.pending.length} no negociables`}: ${names}. Hacé eso antes que cualquier otra cosa.` });
+    else out.unshift({ icon: '🔒', tone: 'info', text: `Tus no negociables de hoy: ${names}. Empezá por ahí.` });
+  }
   if (rescue.length) out.push({ icon: '🛟', tone: 'warn', text: `Prioridad: ${rescue.map((h) => `${h.emoji} ${h.name}`).join(', ')}. Ayer no ${rescue.length === 1 ? 'salió' : 'salieron'}; nunca dos veces seguidas.` });
   if (risks[0]) out.push({ icon: '🔮', tone: 'info', text: `Los ${risks[0].weekday} te cuesta ${risks[0].habit.emoji} ${risks[0].habit.name} (lo fallás el ${Math.round(risks[0].failRate * 100)}% de las veces). Hacelo temprano.` });
   const steps = baseline(data, 'steps', today);
   if (steps && steps.mean < 6000) out.push({ icon: '👟', tone: 'info', text: `Tu promedio es de ${int(steps.mean)} pasos. Una caminata de 20 minutos suma unos 2.500.` });
-  return out.slice(0, 4);
+  return out.slice(0, 5);
 }
 
 /* ---------- Informe ---------- */
@@ -461,6 +470,7 @@ export function weeklyReport(data: AppData, today = todayKey()): WeekReport {
     return sch.length ? sch.filter((d) => isDone(h, entryOf(data.logs, d, h.id), d)).length / sch.length : undefined;
   };
   const rated = habits.map((h) => ({ h, r: rate(h, days), p: rate(h, prevDays) })).filter((x): x is { h: Habit; r: number; p: number | undefined } => x.r !== undefined);
+  const nnWeek = nonNegotiableStats(data, days, to);
   const perfectDays = days.filter((d) => { const s = dayStats(data, d, habits); return s.total > 0 && s.done === s.total; }).length;
 
   const wins: Note[] = [];
@@ -469,6 +479,7 @@ export function weeklyReport(data: AppData, today = todayKey()): WeekReport {
   if (improved) wins.push({ icon: '📈', tone: 'good', text: `${improved.h.emoji} ${improved.h.name} mejoró: de ${Math.round(improved.p! * 100)}% a ${Math.round(improved.r * 100)}%.` });
   const longest = habits.map((h) => ({ h, s: streaks(h, data.logs, ws) })).filter((x) => x.s.unit !== 'semanas' && x.s.current >= 7).sort((a, b) => b.s.current - a.s.current)[0];
   if (longest) wins.push({ icon: '🔥', tone: 'good', text: `${longest.h.emoji} ${longest.h.name} lleva ${longest.s.current} días seguidos.` });
+  if (nnWeek.daysWith && nnWeek.fullDays === nnWeek.daysWith) wins.push({ icon: '🔒', tone: 'good', text: `Cumpliste tus no negociables los ${nnWeek.daysWith} días.` });
   if (perfectDays >= 2) wins.push({ icon: '⭐', tone: 'good', text: `${perfectDays} días perfectos esta semana.` });
   for (const a of AREAS) {
     const v = areas[a.key], p = prev[a.key];
@@ -476,6 +487,7 @@ export function weeklyReport(data: AppData, today = todayKey()): WeekReport {
   }
 
   const improve: Note[] = [];
+  if (nnWeek.daysWith && nnWeek.rate < 0.9) improve.push({ icon: '🔒', tone: 'warn', text: `No negociables: ${Math.round(nnWeek.rate * 100)}% cumplidos (${nnWeek.fullDays} de ${nnWeek.daysWith} días completos). Son lo primero a sostener.` });
   const weakest = rated.filter((x) => x.r < 0.6).sort((a, b) => a.r - b.r)[0];
   if (weakest) {
     const m = milestonesOf(weakest.h, data);

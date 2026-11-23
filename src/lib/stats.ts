@@ -476,3 +476,32 @@ export function activityStreak(data: AppData, today = todayKey()) {
   const last7 = range(addDays(today, -6), today).map((d) => ({ date: d, on: active(d) }));
   return { current, best, last7, todayDone: active(today) };
 }
+
+/** No negociables de un día: cuántos tocan, cuántos están hechos y si se cumplieron todos. */
+export function nonNegotiableDay(data: AppData, d: string) {
+  const hs = activeHabits(data).filter((h) => h.nonNegotiable && countsForDay(h, data.logs, d, data.settings.weekStart));
+  const done = hs.filter((h) => isDone(h, entryOf(data.logs, d, h.id), d));
+  return { total: hs.length, done: done.length, pending: hs.filter((h) => !done.includes(h)), complete: hs.length > 0 && done.length === hs.length };
+}
+
+/** Resumen de no negociables en un período: % cumplido y racha de días con todos hechos. */
+export function nonNegotiableStats(data: AppData, days: string[], today = todayKey()) {
+  let total = 0, done = 0, fullDays = 0, daysWith = 0;
+  for (const d of days) {
+    const x = nonNegotiableDay(data, d);
+    if (!x.total) continue;
+    total += x.total; done += x.done; daysWith++;
+    if (x.complete) fullDays++;
+  }
+  // racha: días seguidos con todos los no negociables (hoy sin terminar no la corta)
+  let streak = 0;
+  const start = activeHabits(data).filter((h) => h.nonNegotiable).reduce((m, h) => (h.createdAt < m ? h.createdAt : m), today);
+  for (let d = today, i = 0; i < 400; i++, d = addDays(d, -1)) {
+    const x = nonNegotiableDay(data, d);
+    if (!x.total) { if (d < start) break; continue; }
+    if (x.complete) streak++;
+    else if (d === today) continue;
+    else break;
+  }
+  return { rate: total ? done / total : 0, total, done, fullDays, daysWith, streak };
+}

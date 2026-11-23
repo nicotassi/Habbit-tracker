@@ -75,13 +75,13 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   if (!meta.length && st.current >= 3) meta.push({ text: `🔥 ${st.current} ${st.unit}` });
 
   return (
-    <div className={`habit-row ${done ? 'done' : ''}`}>
+    <div className={`habit-row ${done ? 'done' : ''} ${h.nonNegotiable ? 'nn' : ''}`}>
       <div className="fill" style={{ width: `${prog * 100}%`, background: h.color }} />
       <button className="habit-emoji" style={{ background: `color-mix(in srgb, ${h.color} 16%, transparent)`, border: 0 }} onClick={() => navigate(`habit/${h.id}`)}>
         {h.emoji}
       </button>
       <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`habit/${h.id}`)}>
-        <div className="habit-name">{h.name}</div>
+        <div className="habit-name">{h.nonNegotiable && <span className="nn-lock" title="No negociable">🔒 </span>}{h.name}</div>
         {meta.length > 0 && <div className="habit-meta">{meta.map((m, i) => <span key={i} className={m.cls}>{m.text}</span>)}</div>}
       </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
-import { activeHabits, activityStreak, dayStats, entryOf, isDone, levelOf, matchesDay, xpOf } from '../lib/stats';
+import { activeHabits, activityStreak, dayStats, entryOf, isDone, levelOf, matchesDay, nonNegotiableDay, xpOf } from '../lib/stats';
 import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
@@ -38,8 +38,11 @@ export function Today() {
   const habits = activeHabits(data);
   const allScheduled = habits.filter((h) => matchesDay(h, date));
   // "nunca dos veces seguidas": los que se fallaron el último día programado van primero
-  const rescue = allScheduled.filter((h) => rescueOf(h, data.logs, date));
-  const scheduled = allScheduled.filter((h) => !rescue.includes(h)).sort((a, b) => startMinutes(a, date) - startMinutes(b, date));
+  // los no negociables van primero, en su propio grupo
+  const byTime = (a: Habit, b: Habit) => startMinutes(a, date) - startMinutes(b, date);
+  const nonNeg = allScheduled.filter((h) => h.nonNegotiable).sort(byTime);
+  const rescue = allScheduled.filter((h) => !h.nonNegotiable && rescueOf(h, data.logs, date));
+  const scheduled = allScheduled.filter((h) => !h.nonNegotiable && !rescue.includes(h)).sort(byTime);
   const isToday = date === todayKey();
   const doneCount = (hs: Habit[]) => hs.filter((h) => isDone(h, entryOf(data.logs, date, h.id), date)).length;
 
@@ -84,6 +87,12 @@ export function Today() {
               </div>
               {view === 'day' ? <DayView date={date} /> : (
                 <>
+                  {nonNeg.length > 0 && (
+                    <div className="habit-group nn-group">
+                      <div className="group-label nn">🔒 No negociables <span>{doneCount(nonNeg)}/{nonNeg.length}</span></div>
+                      <div className="habit-list">{nonNeg.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
+                    </div>
+                  )}
                   {rescue.length > 0 && (
                     <div className="habit-group">
                       <div className="group-label warn">🛟 Rescate <span>· ayer no salió, hoy aunque sea un poco</span></div>
@@ -133,6 +142,7 @@ function TodaySummary({ date }: { date: string }) {
   const s = dayStats(data, date);
   const streak = activityStreak(data);
   const lv = levelOf(xpOf(data));
+  const nn = nonNegotiableDay(data, date);
   const report = useMemo(() => (date === todayKey() ? dailyReport(data) : null), [data, date]);
   const msg = s.total === 0 ? 'Día libre 🌴' : s.done === s.total ? '¡Día perfecto!' : `Te ${s.total - s.done === 1 ? 'falta 1' : `faltan ${s.total - s.done}`}`;
   return (
@@ -145,6 +155,7 @@ function TodaySummary({ date }: { date: string }) {
         </div>
       </div>
       <div className="ts-chips">
+        {nn.total > 0 && <span className={`ts-chip nn ${nn.complete ? 'ok' : ''}`} title="No negociables hechos hoy">🔒 <b>{nn.done}/{nn.total}</b></span>}
         <button className="ts-chip" onClick={() => navigate('analytics')} title="Racha: días seguidos con al menos un hábito">🔥 <b>{streak.current}</b></button>
         <button className="ts-chip" onClick={() => navigate('achievements')} title="Tu nivel">⭐ <b>{lv.level}</b></button>
         {report?.overall !== undefined && (

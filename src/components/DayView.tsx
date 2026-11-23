@@ -76,10 +76,10 @@ function Chip({ h, date }: { h: Habit; date: string }) {
   const done = isDone(h, e, date);
   const prog = progressOf(h, e);
   return (
-    <button className={`day-chip ${done ? 'done' : ''}`} style={{ ['--hc' as string]: h.color }} onClick={(ev) => toggle(h, date, ev.currentTarget)}
+    <button className={`day-chip ${done ? 'done' : ''} ${h.nonNegotiable ? 'nn' : ''}`} style={{ ['--hc' as string]: h.color }} onClick={(ev) => toggle(h, date, ev.currentTarget)}
       title={h.kind === 'check' ? (done ? 'Desmarcar' : 'Marcar como hecho') : 'Ver hábito'}>
       <span>{h.emoji}</span>
-      <span className="dc-name">{h.name}</span>
+      <span className="dc-name">{h.nonNegotiable && '🔒 '}{h.name}</span>
       {done ? <b className="dc-check">✓</b> : h.kind !== 'check' && h.kind !== 'avoid' && prog > 0 ? <span className="tiny muted">{Math.round(prog * 100)}%</span> : null}
     </button>
   );
@@ -185,7 +185,7 @@ export function DayView({ date }: { date: string }) {
                   const st = isToday && !done ? slotStatus(slotFor(item.h, date)!, now) : null;
                   return (
                     <button key={item.h.id}
-                      className={`tl-block ${done ? 'done' : ''} ${st?.kind ?? ''} ${height < 44 ? 'compact' : ''} ${lane > 0 ? 'narrow' : ''}`}
+                      className={`tl-block ${item.h.nonNegotiable ? 'nn' : ''} ${done ? 'done' : ''} ${st?.kind ?? ''} ${height < 44 ? 'compact' : ''} ${lane > 0 ? 'narrow' : ''}`}
                       style={{
                         top, height, zIndex: 1 + lane, ['--hc' as string]: item.h.color,
                         // superpuestos en cascada: el primero ocupa todo el ancho y los siguientes se corren a la derecha
@@ -196,7 +196,7 @@ export function DayView({ date }: { date: string }) {
                       title={`${item.h.name} · ${item.label}`}>
                       <span className="tlb-main">
                         <span>{item.h.emoji}</span>
-                        <span className="tlb-name">{item.h.name}</span>
+                        <span className="tlb-name">{item.h.nonNegotiable && '🔒 '}{item.h.name}</span>
                         {done && <b className="dc-check">✓</b>}
                       </span>
                       <span className="tlb-time">{item.label}{st ? ` · ${st.label}` : ''}</span>

@@ -153,6 +153,15 @@ export function HabitForm({ open, onClose, habit }: { open: boolean; onClose: ()
           </div>
         )}
 
+        <button type="button" className={`nn-toggle ${d.nonNegotiable ? 'on' : ''}`} onClick={() => set({ nonNegotiable: !d.nonNegotiable })} aria-pressed={!!d.nonNegotiable}>
+          <span className="nn-ico">🔒</span>
+          <span className="grow" style={{ textAlign: 'left' }}>
+            <b>No negociable</b>
+            <span className="tiny muted" style={{ display: 'block' }}>Lo que tenés que hacer sí o sí. Va primero en Hoy, se destaca y te aviso si queda pendiente.</span>
+          </span>
+          <span className={`switch ${d.nonNegotiable ? 'on' : ''}`} aria-hidden="true"><i /></span>
+        </button>
+
         {(d.kind === 'count' || d.kind === 'quantity') && (
           <div className="grid g2">
             <div className="field">

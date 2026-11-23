@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, getData } from './lib/store';
 import { navigate, useRoute } from './router';
-import { activeHabits, entryOf, isDone, isScheduled, levelOf, levelTitle, xpOf } from './lib/stats';
+import { activeHabits, entryOf, isDone, isScheduled, levelOf, levelTitle, xpOf, nonNegotiableDay } from './lib/stats';
 import { evaluateAchievements, ACHIEVEMENTS } from './lib/achievements';
 import { todayKey } from './lib/date';
 import { Bar, BrandMark, chime, confetti, Dialogs, toast, Toasts } from './components/ui';
@@ -165,6 +165,12 @@ function App() {
         if (fired.has(key)) continue;
         fired.add(key);
         new Notification(`${h.emoji} ${h.name}`, { body: h.why || 'Es momento de tu hábito', icon: './icon.svg' });
+      }
+      // a las 20:00, aviso si quedan no negociables sin hacer
+      const nn = nonNegotiableDay(d, today);
+      if (hhmm === '20:00' && nn.pending.length && !fired.has(`${today}-nn`)) {
+        fired.add(`${today}-nn`);
+        new Notification('🔒 No negociables pendientes', { body: nn.pending.map((h) => `${h.emoji} ${h.name}`).join(', '), icon: './icon.svg' });
       }
     };
     const i = setInterval(tick, 20000);
