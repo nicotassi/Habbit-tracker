@@ -13,12 +13,14 @@ import { Heatmap } from '../components/Heatmap';
 import { Bar, ChartTooltip, Empty, Seg, Stat } from '../components/ui';
 import { navigate } from '../router';
 import { TimeByHabit } from '../components/TimeStats';
+import { MonthGrid, StreakCard } from '../components/MonthGrid';
 
 type Span = 7 | 30 | 90 | 365;
 
 export function Analytics() {
   const data = useStore();
   const [span, setSpan] = useState<Span>(30);
+  const [sec, setSec] = useState<'general' | 'habits' | 'wellbeing'>('general');
   const [metric, setMetric] = useState<'mood' | 'energy' | 'stress'>('mood');
   const today = todayKey();
   const ws = data.settings.weekStart;
@@ -87,7 +89,11 @@ export function Analytics() {
         <div><div className="eyebrow">Análisis</div><h1 className="title">Tu <em>progreso</em></h1></div>
         <Seg value={span} onChange={setSpan} options={[{ v: 7, l: '7 días' }, { v: 30, l: '30 días' }, { v: 90, l: '3 meses' }, { v: 365, l: '1 año' }]} />
       </div>
+      <div className="section-tabs">
+        <Seg value={sec} onChange={setSec} options={[{ v: 'general', l: 'General' }, { v: 'habits', l: 'Hábitos' }, { v: 'wellbeing', l: 'Bienestar' }]} />
+      </div>
 
+      {sec === 'general' && (<>
       <div className="grid g4" style={{ marginBottom: 16 }}>
         <div className="card"><Stat k="Cumplimiento" v={Math.round(c.cur.rate * 100)} unit="%" sub={delta(c.cur.rate, c.prev.rate)} /></div>
         <div className="card"><Stat k="Hábitos completados" v={c.cur.done} sub={<span className="muted">de {c.cur.total} programados</span>} /></div>
@@ -95,7 +101,15 @@ export function Analytics() {
         <div className="card"><Stat k="Ánimo promedio" v={c.cur.moodN ? c.cur.mood.toFixed(1) : '–'} unit="/5" sub={c.cur.moodN && c.prev.moodN ? delta(c.cur.mood, c.prev.mood, false) : <span className="muted">{c.cur.moodN} registros</span>} /></div>
       </div>
 
+      <div className="grid g3" style={{ marginBottom: 16 }}>
+        <StreakCard />
+        <div className="span2" style={{ minWidth: 0 }}><MonthGrid /></div>
+      </div>
+
+      </>)}
+
       <div className="grid g3">
+        {sec === 'general' && (<>
         <div className="card span3">
           <div className="card-head">
             <div><h3 className="h3">Cumplimiento diario y ánimo</h3><span className="sub">Barras: % del día · Línea: media de 7 días · Puntos: ánimo</span></div>
@@ -139,6 +153,8 @@ export function Analytics() {
           </div>
         )}
 
+        </>)}
+        {sec === 'habits' && (<>
         <div className="card span2">
           <div className="card-head"><h3 className="h3">Tendencia semanal</h3></div>
           <ResponsiveContainer width="100%" height={220}>
@@ -209,6 +225,8 @@ export function Analytics() {
           )}
         </div>
 
+        </>)}
+        {sec === 'wellbeing' && (<>
         <div className="card span2">
           <div className="card-head">
             <div><h3 className="h3">¿Qué hábitos mueven tu bienestar?</h3><span className="sub">Diferencia promedio en días que cumplís vs días que no</span></div>
@@ -232,6 +250,13 @@ export function Analytics() {
           ) : <div className="small muted">Registrá tu ánimo varios días (y no siempre cumplas todo 😉) para ver correlaciones.</div>}
         </div>
 
+        <div className="card col" style={{ gap: 10 }}>
+          <h3 className="h3">Más sobre tu bienestar</h3>
+          <p className="small muted" style={{ margin: 0 }}>Tu ánimo, sueño, emociones y los datos del reloj tienen su propia pestaña. El informe con recomendaciones está en Cómo vas.</p>
+          <div className="row wrap"><button className="btn sm" onClick={() => navigate('mood')}>🫶 Ánimo</button><button className="btn sm" onClick={() => navigate('coach')}>🧭 Cómo vas</button></div>
+        </div>
+        </>)}
+        {sec === 'habits' && (<>
         <TimeByHabit days={range(addDays(today, -(span - 1)), today)} />
 
         <div className="card">
@@ -249,6 +274,7 @@ export function Analytics() {
             return max.count ? <div className="small ink2">Tu hora pico es a las <b>{max.hour}:00</b>.</div> : null;
           })()}
         </div>
+        </>)}
       </div>
     </div>
   );

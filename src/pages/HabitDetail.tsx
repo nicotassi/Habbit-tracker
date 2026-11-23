@@ -5,7 +5,7 @@ import { completionRate, entryOf, isDone, isScheduled, mean, progressOf, strengt
 import { addDays, diffDays, fromKey, MONTHS_SHORT, range, shortDate, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { Heatmap } from '../components/Heatmap';
 import { HabitForm } from '../components/HabitForm';
-import { ChartTooltip, Empty, Ring, Seg, Stat } from '../components/ui';
+import { askConfirm, ChartTooltip, Empty, Ring, Seg, Stat, toast } from '../components/ui';
 import { navigate } from '../router';
 import { freqLabel, kindLabel } from './Habits';
 import { HabitRow } from '../components/HabitRow';
@@ -77,6 +77,12 @@ export function HabitDetail({ id }: { id: string }) {
         <div className="row">
           <button className="btn ghost" onClick={() => navigate('habits')}>← Hábitos</button>
           <button className="btn" onClick={() => setEdit(true)}>Editar</button>
+          <button className="btn ghost" onClick={() => { data.updateHabit(h.id, { archived: !h.archived }); toast(h.archived ? 'Restaurado' : 'Archivado: tu historial se conserva', '🗄️'); if (!h.archived) navigate('habits'); }}>
+            {h.archived ? 'Restaurar' : 'Archivar'}
+          </button>
+          <button className="btn ghost danger" onClick={async () => {
+            if (await askConfirm(`¿Eliminar "${h.name}"?`, { body: 'Se borra el hábito y todo su historial. Si querés conservarlo, archivalo.', danger: true, ok: 'Eliminar' })) { data.deleteHabit(h.id); navigate('habits'); }
+          }}>Eliminar</button>
         </div>
       </div>
 

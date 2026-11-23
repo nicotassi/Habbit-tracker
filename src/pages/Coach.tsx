@@ -5,6 +5,7 @@ import { activeHabits } from '../lib/stats';
 import { shortDate, todayKey } from '../lib/date';
 import { CountUp, Empty, Ring, Seg } from '../components/ui';
 import { navigate } from '../router';
+import { ForecastCard } from '../components/Forecast';
 
 const TONE_COLOR = { good: 'var(--good)', warn: 'var(--warn)', bad: 'var(--bad)', none: 'var(--line-2)' } as const;
 
@@ -107,6 +108,7 @@ export function Coach() {
               <div className="card-head"><div><h3 className="h3">📈 Tendencias</h3><span className="sub">Últimas 2 semanas</span></div></div>
               <NoteList notes={r.trends} empty="Sin cambios fuertes en las últimas 2 semanas." />
             </div>
+            <ForecastCard />
             <div className="card">
               <div className="card-head"><div><h3 className="h3">✨ Patrones que encontré</h3><span className="sub">Qué pasa los días que hacés cada hábito</span></div></div>
               <NoteList notes={r.patterns} empty="Necesito más días con hábitos y datos de ánimo o del reloj para encontrar patrones." />

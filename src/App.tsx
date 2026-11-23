@@ -29,7 +29,6 @@ import { Day } from './pages/Day';
 
 const NAV = [
   { id: 'today', ico: '☀️', label: 'Hoy' },
-  { id: 'dia', ico: '🕒', label: 'Mi día' },
   { id: 'coach', ico: '🧭', label: 'Cómo vas' },
   { id: 'habits', ico: '🌱', label: 'Hábitos' },
   { id: 'analytics', ico: '📊', label: 'Análisis' },
@@ -40,7 +39,7 @@ const NAV = [
   { id: 'achievements', ico: '🏆', label: 'Logros' },
   { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
 ];
-const MOBILE = ['today', 'dia', 'habits', 'analytics', 'focus'];
+const MOBILE = ['today', 'habits', 'mood', 'analytics', 'focus'];
 
 /** Puerta de entrada: sin sesión muestra el login; con sesión, la app y la sincronización con la nube. */
 export default function Root() {
@@ -235,8 +234,8 @@ function App() {
         </button>
         {NAV.map((n, i) => (
           <Fragment key={n.id}>
-            {i === 7 && <div className="nav-section">Crecimiento</div>}
-            {i === 10 && <div className="nav-section">Sistema</div>}
+            {i === 6 && <div className="nav-section">Crecimiento</div>}
+            {i === 9 && <div className="nav-section">Sistema</div>}
             <button className={`nav-item ${active === n.id ? 'active' : ''}`} onClick={() => navigate(n.id)}>
               <span className="ico">{n.ico}</span>{n.label}
             </button>

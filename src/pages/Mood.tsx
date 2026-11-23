@@ -12,6 +12,7 @@ export function Mood() {
   const { moods, deleteMood, watch } = useStore();
   const [date, setDate] = useState(todayKey());
   const [span, setSpan] = useState<30 | 90 | 365>(30);
+  const [sec, setSec] = useState<'log' | 'charts' | 'journal'>('log');
   const [search, setSearch] = useState('');
   const [shown, setShown] = useState(12);
   const today = todayKey();
@@ -51,9 +52,13 @@ export function Mood() {
     <div>
       <div className="page-head">
         <div><div className="eyebrow">Ánimo & diario</div><h1 className="title">Cómo te <em>sentís</em></h1></div>
-        <Seg value={span} onChange={setSpan} options={[{ v: 30, l: '30 días' }, { v: 90, l: '3 meses' }, { v: 365, l: '1 año' }]} />
+        {sec === 'charts' && <Seg value={span} onChange={setSpan} options={[{ v: 30, l: '30 días' }, { v: 90, l: '3 meses' }, { v: 365, l: '1 año' }]} />}
+      </div>
+      <div className="section-tabs">
+        <Seg value={sec} onChange={setSec} options={[{ v: 'log', l: 'Registrar' }, { v: 'charts', l: 'Gráficos' }, { v: 'journal', l: 'Diario' }]} />
       </div>
 
+      {sec === 'log' && (
       <div className="grid g3" style={{ marginBottom: 16 }}>
         <div className="card span2">
           <div className="card-head">
@@ -86,7 +91,9 @@ export function Mood() {
           </div>
         </div>
       </div>
+      )}
 
+      {sec === 'charts' && (<>
       {c.entries.length === 0 ? (
         <div className="card"><Empty emoji="🫶" title="Registrá tu primer ánimo">Con unos días de datos vas a ver tendencias, correlaciones y tu año en píxeles.</Empty></div>
       ) : (
@@ -164,8 +171,10 @@ export function Mood() {
       )}
 
       <WatchCard days={range(addDays(today, -(span - 1)), today)} />
+      </>)}
 
-      <div className="card" style={{ marginTop: 16 }}>
+      {sec === 'journal' && (
+      <div className="card">
         <div className="card-head">
           <div><h3 className="h3">Diario</h3><span className="sub">Tus notas y gratitudes</span></div>
           <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar en el diario…" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -173,7 +182,7 @@ export function Mood() {
         {journal.length ? (
           <div className="col" style={{ gap: 0 }}>
             {journal.slice(0, shown).map((m) => (
-              <div key={m.date} style={{ padding: '14px 0', borderBottom: '1px solid var(--line)', cursor: 'pointer' }} onClick={() => { setDate(m.date); scrollToTop(); }}>
+              <div key={m.date} style={{ padding: '14px 0', borderBottom: '1px solid var(--line)', cursor: 'pointer' }} onClick={() => { setDate(m.date); setSec('log'); scrollToTop(); }}>
                 <div className="row"><span style={{ fontSize: 22 }}>{moodFace(m.mood)}</span><b>{prettyDate(m.date)}</b>
                   <span className="row wrap" style={{ gap: 4 }}>{m.tags.map((t) => <span key={t} className="badge">#{t}</span>)}</span></div>
                 {m.note && <div className="ink2" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{m.note}</div>}
@@ -184,6 +193,7 @@ export function Mood() {
           </div>
         ) : <div className="small muted">Todavía no escribiste en el diario.</div>}
       </div>
+      )}
     </div>
   );
 }

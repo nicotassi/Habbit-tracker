@@ -789,3 +789,72 @@ button.forecast-item:hover { border-color: var(--line-2); }
   box-shadow: var(--shadow-lg); font-size: 14px; animation: rise .25s;
 }
 @media (min-width: 821px) { .update-banner { top: 16px; } }
+
+/* ======================================================================
+   Simplificación visual: Hoy compacto y filas de hábitos de un renglón
+   ====================================================================== */
+.today-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.today-title { font-size: clamp(30px, 4.4vw, 46px); }
+.date-pill { display: inline-flex; align-items: center; flex-shrink: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.dp-arrow { width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); font-size: 18px; line-height: 1; }
+.dp-arrow:hover:not(:disabled) { background: var(--bg-2); }
+.dp-arrow:disabled { opacity: .3; }
+.dp-label { position: relative; padding: 0 8px; font-weight: 600; font-size: 14px; min-width: 52px; text-align: center; cursor: pointer; }
+.dp-label input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; font-size: 16px; }
+
+.today-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px 10px 8px 8px; margin-bottom: 16px; box-shadow: var(--shadow);
+}
+:root[data-theme='graphite'] .today-summary { background: linear-gradient(180deg, #161618, #111113); }
+.ts-progress { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ts-main { font-family: var(--serif); font-size: 26px; line-height: 1; }
+.ts-main span { color: var(--ink-3); font-size: 18px; }
+.ts-chips { display: flex; gap: 6px; }
+.ts-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 5px 10px; font-size: 13px; color: var(--ink); }
+.ts-chip:hover { border-color: var(--line-2); }
+.ts-chip.score.good { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.ts-chip.score.warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.ts-chip.score.bad { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); }
+
+.today-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1080px) { .today-grid { grid-template-columns: minmax(0, 1fr); } }
+.section-title { font-size: 24px; }
+.habit-group { display: flex; flex-direction: column; gap: 6px; }
+.group-label { display: flex; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 6px 2px 0; }
+.group-label span { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.group-label.warn { color: var(--warn); }
+.not-today summary { cursor: pointer; padding: 4px 2px; }
+
+/* fila de hábito compacta */
+.habit-list { gap: 6px; }
+.habit-row { padding: 8px 10px 8px 8px; gap: 10px; border-radius: 14px; min-height: 54px; }
+.habit-emoji { width: 36px; height: 36px; font-size: 18px; border-radius: 11px; }
+.habit-name { font-size: 15px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.habit-row .grow { min-width: 0; }
+.habit-meta { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.habit-meta span + span::before { content: ' · '; color: var(--ink-3); }
+.habit-meta .m-warn { color: var(--warn); font-weight: 600; }
+.habit-meta .m-good { color: var(--good); font-weight: 600; }
+.checkbtn { width: 34px; height: 34px; }
+.stepper button { width: 30px; height: 30px; }
+.stepper .val { min-width: 46px; font-size: 13.5px; }
+.stepper .val small { display: block; font-size: 10.5px; line-height: 1.1; }
+.habit-row .btn.icon { width: 30px; height: 30px; padding: 0; }
+.mood-card .mood-btn { padding: 8px 4px 6px; }
+.mood-card .mood-btn .face { font-size: 24px; }
+.mood-card .mood-btn span:last-child { display: none; }
+@media (max-width: 480px) {
+  .today-summary { padding: 8px; }
+  .ts-chip { padding: 5px 8px; }
+  .habit-row { padding: 7px 8px; gap: 8px; }
+}
+.habits-filters { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.chips-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+.chips-scroll::-webkit-scrollbar { display: none; }
+.chips-scroll .chip { flex-shrink: 0; }
+.habit-item { cursor: pointer; }
+.habit-item:hover { border-color: var(--line-2); }
+.section-tabs { margin: -12px 0 16px; overflow-x: auto; }
+.section-tabs .seg { flex-wrap: nowrap; }
+.section-tabs .seg button { white-space: nowrap; }

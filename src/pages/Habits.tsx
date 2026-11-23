@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
 import type { Habit } from '../lib/types';
-import { completionRate, strength, streaks, totalCompletions } from '../lib/stats';
-import { addDays, todayKey, WEEKDAYS_SHORT } from '../lib/date';
+import { strength } from '../lib/stats';
+import { WEEKDAYS_SHORT } from '../lib/date';
 import { HabitForm } from '../components/HabitForm';
-import { MonthGrid } from '../components/MonthGrid';
 import { scheduleSummary } from '../lib/schedule';
-import { askConfirm, Bar, Empty, Seg, toast } from '../components/ui';
+import { Empty, Ring, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 
 export function freqLabel(h: Habit): string {
@@ -22,12 +21,13 @@ export const kindLabel = (h: Habit) =>
   h.kind === 'check' ? 'Sí/No' : h.kind === 'avoid' ? 'Evitar' : `${h.target} ${h.unit ?? ''}`.trim();
 
 export function Habits() {
-  const { habits, logs, settings, updateHabit, deleteHabit, reorderHabits } = useStore();
+  const { habits, logs, settings, updateHabit, reorderHabits } = useStore();
   const [view, setView] = useState<'active' | 'archived'>('active');
   const [cat, setCat] = useState('Todas');
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState<Habit | null>(null);
   const [open, setOpen] = useState(false);
+  const [sorting, setSorting] = useState(false);
   const cats = ['Todas', ...Array.from(new Set(habits.map((h) => h.category)))];
   const list = habits
     .filter((h) => (view === 'active' ? !h.archived : h.archived))
@@ -43,7 +43,6 @@ export function Habits() {
     [next[i], next[j]] = [next[j], next[i]];
     reorderHabits(next);
   };
-  const today = todayKey();
 
   return (
     <div>
@@ -55,63 +54,52 @@ export function Habits() {
         <button className="btn primary" onClick={() => { setEdit(null); setOpen(true); }}>+ Nuevo hábito</button>
       </div>
 
-      {view === 'active' && <div style={{ marginBottom: 16 }}><MonthGrid /></div>}
-
-      <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
+      <div className="habits-filters">
         <Seg value={view} onChange={setView} options={[{ v: 'active', l: 'Activos' }, { v: 'archived', l: 'Archivados' }]} />
-        <div className="row wrap" style={{ gap: 6 }}>
+        {view === 'active' && list.length > 1 && (
+          <button className={`btn sm ${sorting ? 'primary' : 'ghost'}`} onClick={() => setSorting((x) => !x)}>{sorting ? 'Listo' : '↕ Ordenar'}</button>
+        )}
+      </div>
+      {cats.length > 2 && (
+        <div className="chips-scroll">
           {cats.map((c) => <button key={c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>)}
         </div>
-        <input className="input" style={{ maxWidth: 220, marginLeft: 'auto' }} placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
+      )}
+      {habits.length > 8 && <input className="input" style={{ marginBottom: 12 }} placeholder="Buscar hábito…" value={q} onChange={(e) => setQ(e.target.value)} />}
 
       {list.length === 0 ? (
         <div className="card"><Empty emoji={view === 'active' ? '🌱' : '🗄️'} title={view === 'active' ? 'No hay hábitos todavía' : 'Nada archivado'} /></div>
       ) : (
-        <div className="grid g2">
+        <div className="habit-list">
           {list.map((h) => {
-            const st = streaks(h, logs, settings.weekStart);
             const str = strength(h, logs, settings.weekStart);
-            const rate = completionRate(h, logs, addDays(today, -29), today, settings.weekStart);
+            const sched = scheduleSummary(h);
             return (
-              <div key={h.id} className="card" style={{ padding: 16 }}>
-                <div className="row" style={{ alignItems: 'flex-start' }}>
-                  <div className="habit-emoji" style={{ background: `color-mix(in srgb, ${h.color} 16%, transparent)` }}>{h.emoji}</div>
-                  <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`habit/${h.id}`)}>
-                    <div className="habit-name">{h.name}</div>
-                    <div className="habit-meta">
-                      <span>{freqLabel(h)}</span>{scheduleSummary(h) && <span>· 🕐 {scheduleSummary(h)}</span>}<span>· {kindLabel(h)}</span><span>· {h.category}</span>
-                    </div>
+              <div key={h.id} className="habit-row habit-item" onClick={() => !sorting && navigate(`habit/${h.id}`)}>
+                <div className="habit-emoji" style={{ background: `color-mix(in srgb, ${h.color} 16%, transparent)` }}>{h.emoji}</div>
+                <div className="grow">
+                  <div className="habit-name">{h.name}</div>
+                  <div className="habit-meta"><span>{freqLabel(h)}</span>{sched && <span>🕐 {sched}</span>}</div>
+                </div>
+                {sorting ? (
+                  <div className="row" style={{ gap: 2 }}>
+                    <button className="btn ghost icon" aria-label="Subir" onClick={(e) => { e.stopPropagation(); move(h.id, -1); }}>↑</button>
+                    <button className="btn ghost icon" aria-label="Bajar" onClick={(e) => { e.stopPropagation(); move(h.id, 1); }}>↓</button>
                   </div>
-                  {view === 'active' && (
-                    <div className="row" style={{ gap: 2 }}>
-                      <button className="btn ghost icon" title="Subir" onClick={() => move(h.id, -1)}>↑</button>
-                      <button className="btn ghost icon" title="Bajar" onClick={() => move(h.id, 1)}>↓</button>
-                    </div>
-                  )}
-                </div>
-                <div className="grid g3" style={{ marginTop: 14, gap: 10 }}>
-                  <div><div className="tiny muted">Racha</div><b>🔥 {st.current}</b> <span className="tiny muted">/ {st.best}</span></div>
-                  <div><div className="tiny muted">30 días</div><b>{Math.round(rate * 100)}%</b></div>
-                  <div><div className="tiny muted">Total</div><b>{totalCompletions(h, logs)}</b></div>
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <div className="row between tiny muted" style={{ marginBottom: 4 }}><span>Fuerza del hábito</span><span>{Math.round(str * 100)}%</span></div>
-                  <Bar value={str} color={h.color} />
-                </div>
-                <div className="row wrap" style={{ marginTop: 12, gap: 4 }}>
-                  <button className="btn sm" onClick={() => navigate(`habit/${h.id}`)}>📊 Estadísticas</button>
-                  <button className="btn sm ghost" onClick={() => { setEdit(h); setOpen(true); }}>Editar</button>
-                  <button className="btn sm ghost" onClick={() => { updateHabit(h.id, { archived: !h.archived }); toast(h.archived ? 'Restaurado' : 'Archivado (tu historial se conserva)', '🗄️'); }}>
-                    {h.archived ? 'Restaurar' : 'Archivar'}
-                  </button>
-                  <button className="btn sm ghost danger" style={{ marginLeft: 'auto' }} onClick={async () => { if (await askConfirm(`¿Eliminar "${h.name}"?`, { body: 'Se borra el hábito y todo su historial. Si querés conservarlo, archivalo.', danger: true, ok: 'Eliminar' })) deleteHabit(h.id); }}>Eliminar</button>
-                </div>
+                ) : view === 'archived' ? (
+                  <button className="btn sm" onClick={(e) => { e.stopPropagation(); updateHabit(h.id, { archived: false }); toast('Restaurado', '🗄️'); }}>Restaurar</button>
+                ) : (
+                  <>
+                    <Ring value={str} size={34} stroke={4} color={h.color}><span className="tiny">{Math.round(str * 100)}</span></Ring>
+                    <span className="muted" aria-hidden="true">›</span>
+                  </>
+                )}
               </div>
             );
           })}
         </div>
       )}
+      {view === 'active' && list.length > 0 && !sorting && <p className="tiny muted" style={{ margin: '10px 2px 0' }}>El número es la fuerza de cada hábito (0 a 100). Tocá uno para ver su racha, estadísticas y opciones.</p>}
       <HabitForm open={open} onClose={() => setOpen(false)} habit={edit} />
     </div>
   );

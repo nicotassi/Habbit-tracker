@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Habit } from '../lib/types';
 import { useStore, getData } from '../lib/store';
 import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../lib/stats';
-import { addDays, fromKey, todayKey, weekStartOf } from '../lib/date';
+import { fromKey, todayKey } from '../lib/date';
 import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
 import { rescueOf } from '../lib/forecast';
 import { fmtSlot, slotFor, slotStatus } from '../lib/schedule';
 import { fmtDuration, TimeButton } from './HabitTimer';
 
-const TOD: Record<string, string> = { morning: '🌅 Mañana', afternoon: '☀️ Tarde', evening: '🌙 Noche' };
 
 export function celebrate(el: HTMLElement | null, date: string) {
   const { settings } = getData();
@@ -62,7 +61,18 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const step = h.kind === 'quantity' ? (h.target >= 1000 ? Math.round(h.target / 10) : h.target >= 100 ? 10 : h.target >= 20 ? 5 : 1) : 1;
 
   const weekly = h.frequency.type === 'perWeek' ? weekCount(h, logs, date, weekStart) : null;
-  const ws = weekStartOf(date, weekStart);
+
+  // un solo renglón de detalle, con lo más útil del momento (el resto está en el detalle del hábito)
+  const meta: { text: ReactNode; cls?: string }[] = [];
+  if (rescue?.state === 'rescue') meta.push({ text: `🛟 ${rescue.missed === 1 ? 'Ayer no salió' : `${rescue.missed} días sin hacerlo`}`, cls: 'm-warn' });
+  if (rescue?.state === 'rescued') meta.push({ text: '🛟 Rescatado', cls: 'm-good' });
+  if (h.kind === 'avoid') meta.push({ text: beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída' });
+  if (slot) meta.push({ text: <>🕐 {fmtSlot(slot)}{status && <b className={`slot-badge ${status.kind}`}> {status.label}</b>}</> });
+  if (weekly !== null && h.frequency.type === 'perWeek') meta.push({ text: `${weekly}/${h.frequency.times} esta semana` });
+  if (e?.skipped) meta.push({ text: '⏸ Salteado' });
+  if (e?.seconds) meta.push({ text: `⏱ ${fmtDuration(e.seconds)}` });
+  if (e?.note) meta.push({ text: '📝' });
+  if (!meta.length && st.current >= 3) meta.push({ text: `🔥 ${st.current} ${st.unit}` });
 
   return (
     <div className={`habit-row ${done ? 'done' : ''}`}>
@@ -72,29 +82,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
       </button>
       <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`habit/${h.id}`)}>
         <div className="habit-name">{h.name}</div>
-        <div className="habit-meta">
-          {rescue?.state === 'rescue' && <span className="badge warn">🛟 {rescue.missed === 1 ? 'Ayer no lo hiciste' : `${rescue.missed} días sin hacerlo`}</span>}
-          {rescue?.state === 'rescued' && <span className="badge good">🛟 Rescatado</span>}
-          {st.current > 0 && <span>🔥 {st.current} {st.unit}</span>}
-          {h.kind === 'avoid' && <span>{beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída registrada'}</span>}
-          {slot ? (
-            <span>🕐 {fmtSlot(slot)}{status && <b className={`slot-badge ${status.kind}`}> · {status.label}</b>}</span>
-          ) : h.timeOfDay !== 'any' && <span className="hide-mobile">{TOD[h.timeOfDay]}</span>}
-          {weekly !== null && h.frequency.type === 'perWeek' && (
-            <span className="row" style={{ gap: 6 }}>
-              {weekly}/{h.frequency.times} esta semana
-              <span className="week-dots">
-                {Array.from({ length: 7 }, (_, i) => {
-                  const d = addDays(ws, i);
-                  return <span key={i} style={{ background: isDone(h, entryOf(logs, d, h.id), d) ? h.color : undefined }} />;
-                })}
-              </span>
-            </span>
-          )}
-          {e?.skipped && <span>⏸ Día salteado</span>}
-          {!!e?.seconds && <span>⏱ {fmtDuration(e.seconds)}</span>}
-          {e?.note && <span title={e.note}>📝 {e.note.slice(0, 28)}{e.note.length > 28 ? '…' : ''}</span>}
-        </div>
+        {meta.length > 0 && <div className="habit-meta">{meta.map((m, i) => <span key={i} className={m.cls}>{m.text}</span>)}</div>}
       </div>
 
       {(h.kind === 'count' || h.kind === 'quantity') && (

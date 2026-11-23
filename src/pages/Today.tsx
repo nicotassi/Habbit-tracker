@@ -1,34 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
-import { activeHabits, dayStats, insights, levelOf, matchesDay, levelTitle, perfectDayStreak, xpOf } from '../lib/stats';
-import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_LETTER, weekStartOf } from '../lib/date';
+import { activeHabits, activityStreak, dayStats, entryOf, isDone, levelOf, matchesDay, xpOf } from '../lib/stats';
+import { addDays, fromKey, greeting, prettyDate, relativeDay, todayKey, WEEKDAYS_SHORT } from '../lib/date';
 import { HabitRow } from '../components/HabitRow';
 import { MoodLogger } from '../components/MoodLogger';
-import { CountUp, DateNav, Empty, Ring, Seg } from '../components/ui';
+import { Empty, Ring, Seg } from '../components/ui';
 import { DayView } from '../components/DayView';
-import { MonthGrid, StreakCard } from '../components/MonthGrid';
-import { ForecastCard } from '../components/Forecast';
-import { CoachBrief } from './Coach';
+import { dailyReport, light } from '../lib/coach';
 import { rescueOf } from '../lib/forecast';
 import { effectiveTimeOfDay, startMinutes } from '../lib/schedule';
 import { HabitForm } from '../components/HabitForm';
-import type { TimeOfDay } from '../lib/types';
+import type { Habit, TimeOfDay } from '../lib/types';
 import { navigate } from '../router';
-
-const QUOTES = [
-  ['Somos lo que hacemos repetidamente. La excelencia no es un acto, es un hábito.', 'Will Durant'],
-  ['No subís al nivel de tus metas, caés al nivel de tus sistemas.', 'James Clear'],
-  ['Cada acción es un voto por el tipo de persona que querés ser.', 'James Clear'],
-  ['El secreto para avanzar es empezar.', 'Mark Twain'],
-  ['Pequeños pasos todos los días.', 'Anónimo'],
-  ['La motivación te hace empezar. El hábito te hace seguir.', 'Jim Ryun'],
-  ['No rompas la cadena.', 'Jerry Seinfeld'],
-  ['Lo que se mide, mejora.', 'Peter Drucker'],
-  ['La disciplina es elegir entre lo que querés ahora y lo que más querés.', 'Abraham Lincoln'],
-  ['Hacelo imperfecto, pero hacelo.', 'Anónimo'],
-  ['Nunca saltees dos veces.', 'James Clear'],
-  ['El mejor momento para plantar un árbol fue hace 20 años. El segundo mejor es hoy.', 'Proverbio chino'],
-];
 
 const GROUPS: { k: TimeOfDay; label: string }[] = [
   { k: 'morning', label: '🌅 Mañana' },
@@ -37,6 +20,8 @@ const GROUPS: { k: TimeOfDay; label: string }[] = [
   { k: 'any', label: '✨ En cualquier momento' },
 ];
 
+/* Hoy: lo justo para el día — resumen en una línea, los hábitos y el ánimo.
+   Las estadísticas (racha, grilla del mes, pronóstico, nivel) viven en Análisis, Cómo vas y Logros. */
 export function Today() {
   const data = useStore();
   const [date, setDate] = useState(todayKey());
@@ -50,96 +35,37 @@ export function Today() {
     const i = setInterval(() => setMinute((x) => x + 1), 60000);
     return () => clearInterval(i);
   }, []);
-  const [group, setGroup] = useState(true);
   const habits = activeHabits(data);
   const allScheduled = habits.filter((h) => matchesDay(h, date));
   // "nunca dos veces seguidas": los que se fallaron el último día programado van primero
   const rescue = allScheduled.filter((h) => rescueOf(h, data.logs, date));
   const scheduled = allScheduled.filter((h) => !rescue.includes(h)).sort((a, b) => startMinutes(a, date) - startMinutes(b, date));
-  const s = dayStats(data, date);
-  const xp = xpOf(data);
-  const lv = levelOf(xp);
-  const pd = perfectDayStreak(data);
-  const quote = QUOTES[Math.floor(fromKey(date).getTime() / 86400000) % QUOTES.length];
-  const tip = useMemo(() => insights(data)[0], [data.logs, data.moods, data.habits]);
-  const ws = weekStartOf(date, data.settings.weekStart);
   const isToday = date === todayKey();
+  const doneCount = (hs: Habit[]) => hs.filter((h) => isDone(h, entryOf(data.logs, date, h.id), date)).length;
 
   return (
-    <div>
-      <div className="page-head">
-        <div>
+    <div className="today">
+      <div className="today-head">
+        <div className="grow" style={{ minWidth: 0 }}>
           <div className="eyebrow">{relativeDay(date)} · {prettyDate(date)}</div>
-          <h1 className="title">
+          <h1 className="title today-title">
             {isToday ? <>{greeting()}{data.settings.name ? <>, <em>{data.settings.name}</em></> : ''}.</> : <>Editando <em>{relativeDay(date) === 'Ayer' ? 'ayer' : prettyDate(date)}</em></>}
           </h1>
         </div>
-        <div className="row wrap">
-          <DateNav date={date} onChange={setDate} max={todayKey()} />
-          <button className="btn primary hide-mobile" onClick={() => setFormOpen(true)}>+ Nuevo hábito</button>
-        </div>
+        <DatePill date={date} onChange={setDate} />
       </div>
-
-      {isToday && <CoachBrief />}
 
       {!isToday && (
         <div className="past-banner">
-          <span>✏️ Estás cargando el <b>{prettyDate(date)}</b>. Podés marcar hábitos, cantidades, notas y ánimo de ese día.</span>
+          <span>✏️ Estás cargando el <b>{prettyDate(date)}</b>.</span>
           <button className="btn sm primary" onClick={() => setDate(todayKey())}>Volver a hoy</button>
         </div>
       )}
 
-      <div className="grid g3" style={{ marginBottom: 16 }}>
-        <div className="hero span2">
-          <div className="row" style={{ gap: 28, alignItems: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
-            <Ring value={s.progress} size={132} stroke={11} color="#f3b378" track="rgba(255,255,255,.12)">
-              <div className="serif" style={{ fontSize: 36, lineHeight: 1 }}>{Math.round(s.progress * 100)}%</div>
-            </Ring>
-            <div className="grow">
-              <div className="muted small">Progreso del día</div>
-              <div className="big">{s.done}<span style={{ fontSize: 32, opacity: .5 }}>/{s.total}</span></div>
-              <div className="muted small" style={{ marginTop: 6 }}>
-                {s.total === 0 ? 'Nada programado. Día libre 🌴' : s.done === s.total ? '¡Todo hecho! Disfrutá el resto del día.' : `Te faltan ${s.total - s.done} para el día perfecto.`}
-              </div>
-              <div className="row week-strip" style={{ marginTop: 16, gap: 8 }}>
-                {Array.from({ length: 7 }, (_, i) => {
-                  const d = addDays(ws, i);
-                  const ds = dayStats(data, d);
-                  const future = d > todayKey();
-                  return (
-                    <button key={d} onClick={() => !future && setDate(d)} style={{ border: 0, background: 'transparent', color: 'inherit', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, opacity: future ? 0.35 : 1 }}>
-                      <span style={{ fontSize: 11, opacity: .6 }}>{WEEKDAYS_LETTER[fromKey(d).getDay()]}</span>
-                      <Ring value={future ? 0 : ds.progress} size={30} stroke={4} color="#f3b378" track="rgba(255,255,255,.14)">
-                        <span style={{ fontSize: 10, fontWeight: d === date ? 700 : 400 }}>{fromKey(d).getDate()}</span>
-                      </Ring>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="card col level-hero" style={{ justifyContent: 'space-between' }}>
-          <div className="row" style={{ gap: 18 }}>
-            <Ring value={lv.progress} size={104} stroke={8} color="var(--accent)">
-              <div className="level-num"><CountUp value={lv.level} /></div>
-              <div className="tiny muted" style={{ letterSpacing: '.12em' }}>NIVEL</div>
-            </Ring>
-            <div className="grow">
-              <div className="serif" style={{ fontSize: 30, lineHeight: 1.05 }}>{levelTitle(lv.level)}</div>
-              <div className="level-xp"><CountUp value={xp} /> XP</div>
-              <div className="tiny muted">{lv.toNext} XP para el nivel {lv.level + 1}</div>
-            </div>
-          </div>
-          <div className="row between" style={{ marginTop: 14 }}>
-            <div><div className="serif" style={{ fontSize: 28 }}>🔥 {pd.current}</div><div className="tiny muted">días perfectos seguidos</div></div>
-            <div style={{ textAlign: 'right' }}><div className="serif" style={{ fontSize: 28 }}>{pd.best}</div><div className="tiny muted">récord</div></div>
-          </div>
-        </div>
-      </div>
+      {habits.length > 0 && <TodaySummary date={date} />}
 
-      <div className="grid g3">
-        <div className="span2 col" style={{ gap: 16 }}>
+      <div className="today-grid">
+        <div className="col" style={{ gap: 12, minWidth: 0 }}>
           {habits.length === 0 ? (
             <div className="card">
               <Empty emoji="🌱" title="Empezá tu primer hábito">
@@ -152,76 +78,96 @@ export function Today() {
             </div>
           ) : (
             <>
-              <div className="row between">
-                <h2 className="h2">Hábitos</h2>
+              <div className="row between" style={{ flexWrap: 'nowrap' }}>
+                <h2 className="h2 section-title">Hábitos</h2>
                 <Seg<'list' | 'day'> value={view} onChange={setView} options={[{ v: 'list', l: '☰ Lista' }, { v: 'day', l: '🕒 Mi día' }]} />
               </div>
-              {view === 'day' ? <DayView date={date} /> : <>
-              {rescue.length > 0 && (
-                <div className="rescue-group">
-                  <div className="rescue-head">
-                    <span className="eyebrow" style={{ color: 'var(--warn)' }}>🛟 Rescate</span>
-                    <span className="small ink2">Nunca dos veces seguidas: hacé aunque sea un poco.</span>
-                  </div>
-                  <div className="habit-list">{rescue.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
-                </div>
-              )}
-              {group ? (
-                GROUPS.map((g) => {
-                  const list = scheduled.filter((h) => effectiveTimeOfDay(h, date) === g.k);
-                  if (!list.length) return null;
-                  return (
-                    <div key={g.k}>
-                      <div className="eyebrow" style={{ margin: '4px 4px 8px' }}>{g.label}</div>
-                      <div className="habit-list">{list.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
+              {view === 'day' ? <DayView date={date} /> : (
+                <>
+                  {rescue.length > 0 && (
+                    <div className="habit-group">
+                      <div className="group-label warn">🛟 Rescate <span>· ayer no salió, hoy aunque sea un poco</span></div>
+                      <div className="habit-list">{rescue.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="habit-list">{scheduled.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
+                  )}
+                  {GROUPS.map((g) => {
+                    const list = scheduled.filter((h) => effectiveTimeOfDay(h, date) === g.k);
+                    if (!list.length) return null;
+                    return (
+                      <div key={g.k} className="habit-group">
+                        <div className="group-label">{g.label} <span>{doneCount(list)}/{list.length}</span></div>
+                        <div className="habit-list">{list.map((h) => <HabitRow key={h.id} habit={h} date={date} />)}</div>
+                      </div>
+                    );
+                  })}
+                  {habits.length > allScheduled.length && (
+                    <details className="not-today">
+                      <summary className="muted small">No programados {isToday ? 'hoy' : 'este día'} ({habits.length - allScheduled.length})</summary>
+                      <div className="habit-list" style={{ marginTop: 8, opacity: 0.75 }}>
+                        {habits.filter((h) => !matchesDay(h, date)).map((h) => <HabitRow key={h.id} habit={h} date={date} />)}
+                      </div>
+                    </details>
+                  )}
+                </>
               )}
-              <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => setGroup((g) => !g)}>{group ? 'Ver lista simple' : 'Agrupar por momento'}</button>
-              {habits.length > allScheduled.length && (
-                <details>
-                  <summary className="muted small" style={{ cursor: 'pointer', padding: 4 }}>No programados hoy ({habits.length - allScheduled.length})</summary>
-                  <div className="habit-list" style={{ marginTop: 8, opacity: .7 }}>
-                    {habits.filter((h) => !matchesDay(h, date)).map((h) => <HabitRow key={h.id} habit={h} date={date} />)}
-                  </div>
-                </details>
-              )}
-              </>}
             </>
           )}
-          {habits.length > 0 && <MonthGrid />}
         </div>
 
-        <div className="col" style={{ gap: 16 }}>
-          {habits.length > 0 && <StreakCard />}
-          {isToday && habits.length > 0 && <ForecastCard />}
-          <div className="card">
-            <div className="card-head">
-              <h3 className="h3">¿Cómo te sentís?</h3>
-              <button className="btn ghost sm" onClick={() => navigate('mood')}>Diario →</button>
-            </div>
-            <MoodLogger date={date} compact />
+        <div className="card mood-card">
+          <div className="card-head" style={{ marginBottom: 10 }}>
+            <h3 className="h3">¿Cómo te sentís?</h3>
+            <button className="btn ghost sm" onClick={() => navigate('mood')}>Ver más ›</button>
           </div>
-          {tip && (
-            <div className={`insight ${tip.tone}`}>
-              <div className="i-ico">{tip.icon}</div>
-              <div>
-                <div style={{ fontWeight: 600 }}>{tip.title}</div>
-                <div className="small ink2">{tip.body}</div>
-                <button className="btn ghost sm" style={{ marginTop: 6, marginLeft: -10 }} onClick={() => navigate('analytics')}>Más análisis →</button>
-              </div>
-            </div>
-          )}
-          <div className="card soft">
-            <div className="serif" style={{ fontSize: 22, lineHeight: 1.25 }}>“{quote[0]}”</div>
-            <div className="small muted" style={{ marginTop: 8 }}>— {quote[1]}</div>
-          </div>
+          <MoodLogger date={date} compact />
         </div>
       </div>
       <HabitForm open={formOpen} onClose={() => setFormOpen(false)} />
+    </div>
+  );
+}
+
+/** Resumen del día en una línea: progreso, racha, nivel y puntaje de "Cómo vas" (cada uno lleva a su detalle). */
+function TodaySummary({ date }: { date: string }) {
+  const data = useStore();
+  const s = dayStats(data, date);
+  const streak = activityStreak(data);
+  const lv = levelOf(xpOf(data));
+  const report = useMemo(() => (date === todayKey() ? dailyReport(data) : null), [data, date]);
+  const msg = s.total === 0 ? 'Día libre 🌴' : s.done === s.total ? '¡Día perfecto!' : `Te ${s.total - s.done === 1 ? 'falta 1' : `faltan ${s.total - s.done}`}`;
+  return (
+    <div className="today-summary">
+      <div className="ts-progress">
+        <Ring value={s.progress} size={46} stroke={5}><b className="small">{Math.round(s.progress * 100)}%</b></Ring>
+        <div style={{ minWidth: 0 }}>
+          <div className="ts-main">{s.done}<span>/{s.total}</span></div>
+          <div className="tiny muted">{msg}</div>
+        </div>
+      </div>
+      <div className="ts-chips">
+        <button className="ts-chip" onClick={() => navigate('analytics')} title="Racha: días seguidos con al menos un hábito">🔥 <b>{streak.current}</b></button>
+        <button className="ts-chip" onClick={() => navigate('achievements')} title="Tu nivel">⭐ <b>{lv.level}</b></button>
+        {report?.overall !== undefined && (
+          <button className={`ts-chip score ${light(report.overall)}`} onClick={() => navigate('coach')} title="Cómo vas">🧭 <b>{Math.round(report.overall)}</b></button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Selector de fecha compacto: ‹ Hoy, lun 23 › (al tocar la fecha se abre el calendario del teléfono). */
+function DatePill({ date, onChange }: { date: string; onChange: (d: string) => void }) {
+  const today = todayKey();
+  const d = fromKey(date);
+  const label = date === today ? 'Hoy' : `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()}`;
+  return (
+    <div className="date-pill">
+      <button className="dp-arrow" aria-label="Día anterior" onClick={() => onChange(addDays(date, -1))}>‹</button>
+      <label className="dp-label">
+        <span>{label}</span>
+        <input id="date-nav-input" type="date" value={date} max={today} aria-label="Elegir fecha" onChange={(e) => e.target.value && e.target.value <= today && onChange(e.target.value)} />
+      </label>
+      <button className="dp-arrow" aria-label="Día siguiente" disabled={date >= today} onClick={() => onChange(addDays(date, 1))}>›</button>
     </div>
   );
 }
