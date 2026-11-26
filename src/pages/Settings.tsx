@@ -191,6 +191,7 @@ function NotifyCard() {
   const [step, setStep] = useState('');
   const [problem, setProblem] = useState('');
   const [manual, setManual] = useState(false);
+  const samsung = /SamsungBrowser/i.test(navigator.userAgent);
   const enable = async () => {
     setBusy(true);
     setProblem('');
@@ -231,7 +232,25 @@ function NotifyCard() {
       ) : (
         <div className="col" style={{ gap: 6 }}>
           <button className="btn primary" disabled={busy} onClick={enable} style={{ alignSelf: 'flex-start' }}>{busy ? step || 'Activando…' : 'Activar avisos en este dispositivo'}</button>
-          {manual && (
+          {manual && (samsung ? (
+            <div className="coach-note warn perm-help">
+              <span className="cn-ico">🔔</span>
+              <div className="small">
+                <b>Samsung Internet no muestra el pedido de permiso dentro de la app instalada.</b> Hay que darlo una sola vez desde el navegador; después los avisos funcionan en la app.
+                <ol>
+                  <li>Tocá el botón de abajo (o abrí <b>Samsung Internet</b> y entrá a <i>nicotassi.github.io/Habbit-tracker</i>).</li>
+                  <li>Si te lo pide, entrá con tu usuario y PIN.</li>
+                  <li>Andá a <i>Ajustes → Avisos y rituales → Activar avisos</i> y tocá <b>Permitir</b> en el cartel.</li>
+                  <li>Volvé a la app: ya queda activado.</li>
+                </ol>
+                <div className="row wrap" style={{ gap: 8 }}>
+                  <a className="btn sm primary" href="https://nicotassi.github.io/Habbit-tracker/?abrir=navegador#ajustes" target="_blank" rel="noopener">Abrir en Samsung Internet</a>
+                  <button className="btn sm" onClick={enable}>Ya lo habilité: activar</button>
+                </div>
+                <p className="tiny muted" style={{ margin: '8px 0 0' }}>Si en el navegador tampoco aparece el cartel: Samsung Internet → ☰ → Configuración → Sitios y descargas → Notificaciones → activá “Permitir notificaciones” y revisá que este sitio no esté bloqueado.</p>
+              </div>
+            </div>
+          ) : (
             <div className="coach-note warn perm-help">
               <span className="cn-ico">🔔</span>
               <div className="small">
@@ -244,7 +263,7 @@ function NotifyCard() {
                 <button className="btn sm" onClick={enable}>Ya lo habilité: activar</button>
               </div>
             </div>
-          )}
+          ))}
           {problem && <div className="coach-note warn"><span className="cn-ico">⚠️</span><div className="small">{problem}</div></div>}
           {pushNeedsInstall() && <span className="tiny muted">En iPhone los avisos funcionan con Ritmo agregado a la pantalla de inicio (Compartir → Agregar a inicio).</span>}
           {!pushNeedsInstall() && !pushSupported() && <span className="tiny muted">Este navegador no soporta avisos push.</span>}
