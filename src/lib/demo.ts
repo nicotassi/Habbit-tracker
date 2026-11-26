@@ -121,5 +121,7 @@ export function buildDemo(): AppData {
     reviews: {},
     settings: { ...DEFAULT_SETTINGS, name: 'Nico' },
     unlocked: {},
+    rituals: {},
+    adapt: {},
   };
 }

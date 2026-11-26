@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Frequency, Habit, HabitKind, HabitSchedule, TimeOfDay, TimeSlot } from '../lib/types';
 import { useStore } from '../lib/store';
-import { WEEKDAYS_LETTER } from '../lib/date';
+import { todayKey, WEEKDAYS_LETTER } from '../lib/date';
 import { Modal, Seg, toast } from './ui';
 
 export const COLORS = ['#c8643b', '#d4574a', '#d08a4a', '#c9a227', '#5aa469', '#3f8f7a', '#4ea3d9', '#5b6ee1', '#8b7fd1', '#b5838d', '#d16ba5', '#5f6b7a'];
@@ -39,7 +39,7 @@ const blank = (): Draft => ({
 });
 
 export function HabitForm({ open, onClose, habit }: { open: boolean; onClose: () => void; habit?: Habit | null }) {
-  const { addHabit, updateHabit, habits } = useStore();
+  const { addHabit, updateHabit, changeGoal, habits } = useStore();
   const [d, setD] = useState<Draft>(blank());
   const [showEmoji, setShowEmoji] = useState(false);
   useEffect(() => {
@@ -55,7 +55,15 @@ export function HabitForm({ open, onClose, habit }: { open: boolean; onClose: ()
     if (schedule === 'error') return;
     const clean: Draft = { ...d, schedule, name: d.name.trim(), target: d.kind === 'check' || d.kind === 'avoid' ? 1 : Math.max(1, Number(d.target) || 1) };
     if (habit) {
-      updateHabit(habit.id, clean);
+      // si solo cambió la meta (mismo tipo), los días anteriores conservan la meta que tenían
+      const sameKind = habit.kind === clean.kind;
+      const tChange = sameKind && (clean.kind === 'count' || clean.kind === 'quantity') && clean.target !== habit.target ? clean.target : undefined;
+      const wChange = habit.frequency.type === 'perWeek' && clean.frequency.type === 'perWeek' && clean.frequency.times !== habit.frequency.times ? clean.frequency.times : undefined;
+      if (tChange !== undefined || wChange !== undefined) {
+        changeGoal(habit.id, todayKey(), { target: tChange, times: wChange });
+        const fresh = useStore.getState().habits.find((x) => x.id === habit.id)!;
+        updateHabit(habit.id, { ...clean, target: fresh.target, frequency: fresh.frequency, goalLog: fresh.goalLog });
+      } else updateHabit(habit.id, clean);
       toast('Hábito actualizado', '✨');
     } else {
       addHabit(clean);

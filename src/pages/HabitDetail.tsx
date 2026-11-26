@@ -11,6 +11,8 @@ import { freqLabel, kindLabel } from './Habits';
 import { HabitRow } from '../components/HabitRow';
 import { HabitForecast } from '../components/Forecast';
 import { HabitTimeCard } from '../components/TimeStats';
+import { AdaptCard } from '../components/AdaptCard';
+import { adaptSuggestions } from '../lib/adapt';
 
 export function HabitDetail({ id }: { id: string }) {
   const data = useStore();
@@ -62,6 +64,7 @@ export function HabitDetail({ id }: { id: string }) {
   const amount = totalAmount(h, data.logs);
   const age = diffDays(today, h.createdAt) + 1;
   const quantitative = h.kind === 'count' || h.kind === 'quantity';
+  const adapt = adaptSuggestions(data, today).find((x) => x.habit.id === h.id);
 
   return (
     <div>
@@ -87,6 +90,8 @@ export function HabitDetail({ id }: { id: string }) {
       </div>
 
       <div style={{ marginBottom: 16 }}><HabitRow habit={h} date={today} /></div>
+      {adapt && <div style={{ marginBottom: 16 }}><AdaptCard s={adapt} /></div>}
+      {h.goalLog?.length ? <div className="tiny muted" style={{ margin: '-8px 0 14px' }}>🎚️ Meta ajustada: {h.goalLog.map((g) => `${g.target ?? g.times}${g.times !== undefined ? '/sem' : h.unit ? ` ${h.unit}` : ''} hasta el ${shortDate(g.until)}`).join(' · ')} · ahora {h.frequency.type === 'perWeek' ? `${h.frequency.times}/sem` : `${h.target}${h.unit ? ` ${h.unit}` : ''}`}</div> : null}
 
       <div className="grid g4" style={{ marginBottom: 16 }}>
         <div className="card row" style={{ gap: 16 }}>
@@ -103,7 +108,7 @@ export function HabitDetail({ id }: { id: string }) {
           <div className="card-head">
             <div><h3 className="h3">Año en un vistazo</h3><span className="sub">Cada cuadrado es un día · tocá uno para editarlo</span></div>
           </div>
-          <Heatmap weeks={53} color={h.color} weekStart={ws} onPick={(d) => navigate(`calendar/${d}`)} values={(d) => (d < h.createdAt ? null : isScheduled(h, d) || entryOf(data.logs, d, h.id) ? progressOf(h, entryOf(data.logs, d, h.id)) : null)} />
+          <Heatmap weeks={53} color={h.color} weekStart={ws} onPick={(d) => navigate(`calendar/${d}`)} values={(d) => (d < h.createdAt ? null : isScheduled(h, d) || entryOf(data.logs, d, h.id) ? progressOf(h, entryOf(data.logs, d, h.id), d) : null)} />
         </div>
 
         <div className="card span2">

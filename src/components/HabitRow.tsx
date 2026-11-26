@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { Habit } from '../lib/types';
 import { useStore, getData } from '../lib/store';
-import { dayStats, entryOf, isDone, progressOf, streaks, weekCount } from '../lib/stats';
+import { dayStats, entryOf, isDone, progressOf, streaks, targetOn, timesOn, weekCount } from '../lib/stats';
 import { fromKey, todayKey } from '../lib/date';
 import { askText, chime, confetti, floatXP, toast } from './ui';
 import { navigate } from '../router';
@@ -34,7 +34,8 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const [menu, setMenu] = useState(false);
   const e = entryOf(logs, date, h.id);
   const done = isDone(h, e, date);
-  const prog = progressOf(h, e);
+  const prog = progressOf(h, e, date);
+  const target = targetOn(h, date);
   const st = streaks(h, logs, weekStart, date);
   const value = e?.value ?? 0;
   const beforeStart = date < h.createdAt;
@@ -51,14 +52,14 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   const commit = (v: number, el: HTMLElement | null) => {
     const wasDone = done;
     setEntry(date, h.id, v <= 0 && !e?.note ? null : { ...e, value: Math.max(0, v), skipped: false, at: e?.at ?? stamp() });
-    const nowDone = h.kind === 'check' ? v >= 1 : v >= h.target;
+    const nowDone = h.kind === 'check' ? v >= 1 : v >= target;
     if (!wasDone && nowDone) {
       celebrate(el, date);
       if (rescue?.state === 'rescue') setTimeout(() => toast('¡Rescatado! Nunca dos veces seguidas', '🛟'), 400);
     }
   };
 
-  const step = h.kind === 'quantity' ? (h.target >= 1000 ? Math.round(h.target / 10) : h.target >= 100 ? 10 : h.target >= 20 ? 5 : 1) : 1;
+  const step = h.kind === 'quantity' ? (target >= 1000 ? Math.round(target / 10) : target >= 100 ? 10 : target >= 20 ? 5 : 1) : 1;
 
   const weekly = h.frequency.type === 'perWeek' ? weekCount(h, logs, date, weekStart) : null;
 
@@ -68,7 +69,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
   if (rescue?.state === 'rescued') meta.push({ text: '🛟 Rescatado', cls: 'm-good' });
   if (h.kind === 'avoid') meta.push({ text: beforeStart && !e ? 'Sin registrar' : done ? 'Día limpio' : 'Recaída' });
   if (slot) meta.push({ text: <>🕐 {fmtSlot(slot)}{status && <b className={`slot-badge ${status.kind}`}> {status.label}</b>}</> });
-  if (weekly !== null && h.frequency.type === 'perWeek') meta.push({ text: `${weekly}/${h.frequency.times} esta semana` });
+  if (weekly !== null && h.frequency.type === 'perWeek') meta.push({ text: `${weekly}/${timesOn(h, date)} esta semana` });
   if (e?.skipped) meta.push({ text: '⏸ Salteado' });
   if (e?.seconds) meta.push({ text: `⏱ ${fmtDuration(e.seconds)}` });
   if (e?.note) meta.push({ text: '📝' });
@@ -92,7 +93,7 @@ export function HabitRow({ habit: h, date }: { habit: Habit; date: string }) {
             const r = await askText(`${h.name}: ¿cuánto${h.unit ? ` (${h.unit})` : ''}?`, String(value), { ok: 'Guardar' });
             if (r !== null && r.trim() !== '' && !isNaN(Number(r.replace(',', '.')))) commit(Number(r.replace(',', '.')), null);
           }} style={{ cursor: 'text' }}>
-            {value}<small>/{h.target}{h.unit ? ` ${h.unit}` : ''}</small>
+            {value}<small>/{target}{h.unit ? ` ${h.unit}` : ''}</small>
           </div>
           <button onClick={(ev) => commit(value + step, ev.currentTarget)} aria-label="sumar">+</button>
         </div>

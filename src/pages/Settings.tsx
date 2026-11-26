@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { getData, useStore } from '../lib/store';
 import { buildDemo } from '../lib/demo';
 import { copyBackup, exportCSV, exportJSON, parseBackup, readBackup } from '../lib/io';
@@ -8,6 +8,7 @@ import { navigate } from '../router';
 import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
 import { InstallCard } from '../components/Install';
 import { applyUpdate, checkForUpdate } from '../lib/update';
+import { disablePush, enablePush, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush } from '../lib/push';
 
 // Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
 const embedded = window.top !== window;
@@ -26,12 +27,6 @@ export function Settings() {
     const t = await askText('Pegá tu backup', '', { multiline: true, body: 'Pegá el texto que copiaste con “Copiar backup”.', ok: 'Continuar' });
     if (!t) return;
     try { await restore(parseBackup(t)); } catch { toast('Ese texto no es un backup válido', '⚠️'); }
-  };
-  const askNotif = async () => {
-    if (!('Notification' in window)) return toast('Tu navegador no soporta notificaciones', '🔕');
-    const p = await Notification.requestPermission();
-    setSettings({ notifications: p === 'granted' });
-    toast(p === 'granted' ? 'Recordatorios activados' : 'Permiso denegado', p === 'granted' ? '🔔' : '🔕');
   };
   return (
     <div>
@@ -68,14 +63,10 @@ export function Settings() {
           </div>
           <Toggle label="🎉 Confeti al completar" on={settings.confetti} set={(v) => setSettings({ confetti: v })} />
           <Toggle label="🔔 Sonido al completar" on={settings.sound} set={(v) => setSettings({ sound: v })} />
-          <div className="row between">
-            <span>⏰ Recordatorios del navegador</span>
-            {settings.notifications ? <button className="btn sm" onClick={() => setSettings({ notifications: false })}>Desactivar</button> : <button className="btn sm primary" onClick={askNotif}>Activar</button>}
-          </div>
-          <span className="tiny muted">Los recordatorios se disparan a la hora configurada en cada hábito mientras la app esté abierta (o instalada como app).</span>
         </div>
 
         <div className="col" style={{ gap: 16 }}>
+          <NotifyCard />
           <InstallCard />
           <div className="card col" style={{ gap: 10 }}>
             <h3 className="h3">🔄 Versión de la app</h3>
@@ -138,6 +129,12 @@ export function Settings() {
   );
 }
 
+function Switch({ on, set, label }: { on: boolean; set: (v: boolean) => void; label: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`mini-switch ${on ? 'on' : ''}`} onClick={() => set(!on)}><span /></button>
+  );
+}
+
 function Toggle({ label, on, set }: { label: string; on: boolean; set: (v: boolean) => void }) {
   return (
     <label className="row between" style={{ cursor: 'pointer' }}>
@@ -182,6 +179,62 @@ function AccountCard() {
         </div>
       </div>
       <p className="tiny muted" style={{ margin: '12px 0 0' }}>Para usar Ritmo en otro celular o compu, abrí el mismo link y entrá con <b>@{session.user}</b> y tu PIN. Otra persona puede crear su propia cuenta desde la pantalla de inicio.</p>
+    </div>
+  );
+}
+
+/** Avisos push y horarios de los rituales de arranque y cierre. */
+function NotifyCard() {
+  const { settings, setSettings } = useStore();
+  const [on, setOn] = useState(pushOnThisDevice());
+  const [busy, setBusy] = useState(false);
+  const enable = async () => {
+    setBusy(true);
+    const r = await enablePush();
+    setBusy(false);
+    if (r === 'ok') { setOn(true); toast('Avisos activados en este dispositivo', '🔔'); }
+    else if (r === 'install') toast('En iPhone, primero agregá Ritmo a la pantalla de inicio (Compartir → Agregar a inicio) y activá los avisos desde ahí', '📲');
+    else if (r === 'denied') toast('Permiso denegado. Habilitá las notificaciones de Ritmo en los ajustes del celular', '🔕');
+    else if (r === 'unsupported') toast('Este navegador no soporta avisos push', '🔕');
+    else toast('No se pudieron activar los avisos. Probá de nuevo', '⚠️');
+  };
+  const disable = async () => { await disablePush(); setOn(false); toast('Avisos desactivados en este dispositivo', '🔕'); };
+  return (
+    <div className="card col notify-card" style={{ gap: 12 }}>
+      <h3 className="h3">🔔 Avisos y rituales</h3>
+      <p className="small muted" style={{ margin: 0 }}>
+        Ritmo te avisa aunque tengas la app cerrada y el celular bloqueado: a la mañana con tu plan, a la hora de cada hábito con horario y a la noche para cerrar el día.
+      </p>
+      {on ? (
+        <div className="row wrap" style={{ gap: 8 }}>
+          <span className="pill good">✓ Activados en este dispositivo</span>
+          <button className="btn sm" onClick={async () => { await testPush(); toast('Te mando uno de prueba: llega en menos de un minuto', '🔔'); }}>Probar</button>
+          <button className="btn sm ghost" onClick={disable}>Desactivar</button>
+        </div>
+      ) : (
+        <div className="col" style={{ gap: 6 }}>
+          <button className="btn primary" disabled={busy} onClick={enable} style={{ alignSelf: 'flex-start' }}>{busy ? 'Activando…' : 'Activar avisos en este dispositivo'}</button>
+          {pushNeedsInstall() && <span className="tiny muted">En iPhone los avisos funcionan con Ritmo agregado a la pantalla de inicio (Compartir → Agregar a inicio).</span>}
+          {!pushNeedsInstall() && !pushSupported() && <span className="tiny muted">Este navegador no soporta avisos push.</span>}
+        </div>
+      )}
+      <div className="notify-rows">
+        <div className="notify-row">
+          <span className="grow">☀️ Arranque</span>
+          <input className="input time-input" type="time" aria-label="Hora del arranque" value={settings.ritualMorning} onChange={(e) => e.target.value && setSettings({ ritualMorning: e.target.value })} />
+          <Switch on={settings.pushMorning} set={(v) => setSettings({ pushMorning: v })} label="Aviso de arranque" />
+        </div>
+        <div className="notify-row">
+          <span className="grow">🕐 Hora de cada hábito</span>
+          <Switch on={settings.pushHabits} set={(v) => setSettings({ pushHabits: v })} label="Aviso a la hora de cada hábito" />
+        </div>
+        <div className="notify-row">
+          <span className="grow">🌙 Cierre</span>
+          <input className="input time-input" type="time" aria-label="Hora del cierre" value={settings.ritualEvening} onChange={(e) => e.target.value && setSettings({ ritualEvening: e.target.value })} />
+          <Switch on={settings.pushEvening} set={(v) => setSettings({ pushEvening: v })} label="Aviso de cierre" />
+        </div>
+      </div>
+      <span className="tiny muted">Como mucho: uno a la mañana, uno por cada hábito con horario y uno a la noche. Si ya hiciste el hábito o el ritual, el aviso no llega.</span>
     </div>
   );
 }

@@ -20,7 +20,7 @@ const SNOOZE_KEY = 'ritmo-install-snooze';
 export const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 const ua = () => navigator.userAgent;
-const isIOS = () => /iphone|ipad|ipod/i.test(ua()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+export const isIOS = () => /iphone|ipad|ipod/i.test(ua()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isMobile = () => isIOS() || /android/i.test(ua());
 // navegadores internos de otras apps (WhatsApp, Instagram, Facebook…), donde no se puede instalar
 const isInApp = () => /FBAN|FBAV|Instagram|Line\/|WhatsApp|Twitter|TikTok|; wv\)/i.test(ua());

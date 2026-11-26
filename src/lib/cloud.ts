@@ -52,7 +52,7 @@ export class CloudError extends Error {
   }
 }
 
-async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   let r: Response;
   try {
     r = await fetch(`${SB}/rest/v1/rpc/${fn}`, {
@@ -223,7 +223,7 @@ export async function pull(): Promise<void> {
   }
 }
 
-const KEYS = ['habits', 'logs', 'moods', 'watch', 'focus', 'goals', 'reviews', 'settings', 'unlocked'] as const;
+const KEYS = ['habits', 'logs', 'moods', 'watch', 'focus', 'goals', 'reviews', 'settings', 'unlocked', 'rituals', 'adapt'] as const;
 
 /** Arranca la sincronización: guarda cada cambio (con un pequeño retraso) y refresca al volver a la app. */
 export function startSync() {

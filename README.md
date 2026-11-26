@@ -24,10 +24,26 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - “Tu plan de hoy”: los hábitos del día ordenados por prioridad (no negociables → rescates → días que te cuestan → horario) y cada uno con su motivo: 🔒 No negociable, 🛟 Ayer no salió, ⚠️ Los lunes te cuesta, 🔥 Racha que crece hoy, 🧬 a días de volverse automático, ✨ lo que te mejora según tus datos, 🪶 versión mínima en días difíciles.
 - “Lo que está en juego hoy” (rachas, día perfecto, nivel, no negociables), “Por qué te conviene” (patrones de tus datos) y los consejos de Cómo vas. Si no registraste el ánimo, te lo pide para ajustar el plan.
 
+**Rituales de 30 segundos**
+- **Arranque (☀️ a la mañana):** cómo amaneciste (ánimo, energía, horas de sueño; muestra lo que dice tu reloj), el tipo de día que te armó el motor con eso, tu **foco del día** (el hábito que hace que el día valga) y una intención opcional. Al terminar, Inicio muestra tu foco y si es un hábito que cuenta tiempo arranca el cronómetro o el pomodoro.
+- **Cierre (🌙 a la noche):** lo que quedó pendiente para marcarlo o saltearlo, si cumpliste tu foco, cómo estuvo el día y lo mejor del día (se suma a tu diario), la captura del reloj, un resumen (día perfecto, nivel) y cómo viene mañana (primer horario y no negociables). “Una cosa para mañana” te la recuerda el arranque del día siguiente.
+- Inicio los ofrece en su momento (con la racha de días seguidos) y los avisos llevan directo a cada uno.
+
+**Avisos con el celular bloqueado (push)**
+- Se activan por dispositivo en Ajustes → Avisos y rituales. Llegan aunque la app esté cerrada: el **arranque** a la hora que elijas con el tipo de día, tus no negociables y el primer paso; **a la hora de cada hábito** con horario o recordatorio; y el **cierre** a la noche con lo que te falta. Si ya hiciste el hábito o el ritual, el aviso no llega. Hay botón “Probar”.
+- En iPhone funcionan con Ritmo agregado a la pantalla de inicio (iOS 16.4 o más).
+- Cómo funciona: la app calcula con su propio motor la agenda de avisos de los próximos 7 días y la sube a Supabase cada vez que cambian tus datos (desde cualquier dispositivo). Cada minuto `pg_cron` llama a la función `ritmo-push` (Edge Function con `web-push` y claves VAPID), que manda lo que venció a todos tus dispositivos suscriptos. Ver `supabase/ritmo_push.sql` y `supabase/functions/ritmo-push`.
+
+**Metas que se adaptan**
+- Si un hábito viene costando (lo cumplís menos del 40% en las últimas 2 semanas), Ritmo propone una meta más alcanzable basada en lo que realmente hacés (por ejemplo, de 20 a 8 páginas, o de 4 a 2 veces por semana). Si es un hábito de Sí/No, sugiere achicarlo (versión de 2 minutos, menos días u otro horario).
+- Si está consolidado (90% o más y racha larga, o todas las semanas cumplidas), propone subir la vara.
+- Nunca cambia nada sin que aceptes; “Mantener como está” la deja tranquila por 2 semanas. Aparece en Inicio, en el arranque, en Cómo vas y en el detalle del hábito.
+- Al cambiar una meta (desde la sugerencia o editando el hábito), los días anteriores conservan la meta que tenían: tu historial y tus rachas no cambian.
+
 **Hábitos (sin límite)**
 - 4 tipos: Sí/No, Contador (vasos de agua), Cantidad con unidad (min, páginas, km, $) y **Evitar** (malos hábitos: cada día limpio cuenta).
 - Frecuencias: todos los días, días específicos o X veces por semana.
-- **No negociables:** marcá los hábitos que tenés que hacer sí o sí. Van primero en Hoy con su contador, se destacan en la lista, en Mi día y en Hábitos; Cómo vas te avisa si quedan pendientes a la tarde, el resumen semanal y Análisis muestran su cumplimiento y la racha de días completos, y a las 20:00 llega un aviso si falta alguno.
+- **No negociables:** marcá los hábitos que tenés que hacer sí o sí. Van primero en Hoy con su contador, se destacan en la lista, en Mi día y en Hábitos; Cómo vas te avisa si quedan pendientes a la tarde, el resumen semanal y Análisis muestran su cumplimiento y la racha de días completos, y el aviso de cierre te recuerda los que faltan.
 - **Horario** opcional: el mismo cada día o distinto por día de la semana (desde y, si querés, hasta). En Hoy los hábitos se ordenan por hora, se ubican solos en mañana/tarde/noche y muestran “Ahora”, “En 15 min” o “Atrasado”; el recordatorio avisa a la hora de inicio.
 - Emoji, color, categoría, momento del día, recordatorio y “por qué lo hacés”.
 - **Cómo se cumple:** “Solo marcar” o “Cuenta tiempo”. Los que cuentan tiempo tienen un botón ▶ para iniciarlos con cronómetro (con pausa, sigue aunque cierres la app) o pomodoro; al terminar se guarda el tiempo dedicado y, si querés, se marca como hecho. Los hábitos en minutos suman lo cronometrado. El tiempo también se puede cargar o ajustar a mano, y se ve en el detalle de cada hábito y en Análisis.

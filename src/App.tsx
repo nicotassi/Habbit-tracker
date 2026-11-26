@@ -27,6 +27,8 @@ import { Settings } from './pages/Settings';
 import { Coach } from './pages/Coach';
 import { Day } from './pages/Day';
 import { Start } from './pages/Start';
+import { Ritual } from './pages/Ritual';
+import { pushOnThisDevice, startPushSync } from './lib/push';
 
 const NAV = [
   { id: 'inicio', ico: '🚀', label: 'Inicio' },
@@ -65,6 +67,14 @@ export default function Root() {
   const fontScale = useStore((s) => s.settings.fontScale ?? 1);
   useEffect(() => { document.documentElement.style.setProperty('--ui-zoom', String(fontScale)); }, [fontScale]);
   useEffect(() => (session ? startSync() : undefined), [session?.user, session?.token]); // eslint-disable-line
+  useEffect(() => (session ? startPushSync() : undefined), [session?.user, session?.token]); // eslint-disable-line
+  // al tocar un aviso con la app abierta, el service worker pide ir a esa pantalla
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const f = (e: MessageEvent) => { if (e.data?.type === 'nav' && typeof e.data.hash === 'string') window.location.hash = e.data.hash.replace(/^#/, '') || 'inicio'; };
+    navigator.serviceWorker.addEventListener('message', f);
+    return () => navigator.serviceWorker.removeEventListener('message', f);
+  }, []);
 
   // Versiones nuevas: se revisa al abrir, cada 15 minutos y al volver a la app.
   // Al volver a la app (o al abrirla) se actualiza sola si no hay nada a medio hacer; si no, aparece el botón "Actualizar".
@@ -155,6 +165,7 @@ function App() {
     const fired = new Set<string>();
     const tick = () => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (pushOnThisDevice()) return; // los avisos push del servidor ya cubren estos recordatorios
       const now = new Date();
       const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const d = getData();
@@ -222,10 +233,11 @@ function App() {
       case 'coach': return <Coach />;
       case 'dia': return <Day />;
       case 'today': return <Today />;
+      case 'ritual': return <Ritual part={route[1] === 'evening' ? 'evening' : 'morning'} />;
       default: return <Start />;
     }
   })();
-  const active = page === 'habit' ? 'habits' : page;
+  const active = page === 'habit' ? 'habits' : page === 'ritual' ? 'inicio' : page;
   const go = (id: string) => { setMore(false); navigate(id); };
 
   return (

@@ -27,6 +27,8 @@ export interface Habit {
   trackTime?: boolean;
   /** No negociable: lo que hay que hacer sí o sí (va primero y se destaca) */
   nonNegotiable?: boolean;
+  /** Metas anteriores (cuando se ajustó la meta): hasta esa fecha inclusive valía esa meta */
+  goalLog?: { until: string; target?: number; times?: number }[];
   createdAt: string; // ISO date YYYY-MM-DD
   archived: boolean;
   order: number;
@@ -129,7 +131,25 @@ export interface Settings {
   pomoAuto: boolean; // arrancar la siguiente fase sola
   /** tamaño del texto: 0.88 … 1.16 (1 = normal) */
   fontScale: number;
+  /** horarios de los rituales (HH:MM) */
+  ritualMorning: string;
+  ritualEvening: string;
+  /** qué avisos push mandar */
+  pushMorning: boolean;
+  pushHabits: boolean;
+  pushEvening: boolean;
+  /** hay al menos un dispositivo con avisos push: todos los dispositivos mantienen la agenda al día */
+  pushActive: boolean;
 }
+
+/** Arranque y cierre del día (rituales de 30 segundos). */
+export interface RitualDay {
+  morning?: { at: number; intention?: string; focusId?: string };
+  evening?: { at: number; win?: string; tomorrow?: string };
+}
+
+/** Sugerencias de ajuste de metas que ya se respondieron (para no insistir). */
+export interface AdaptRecord { at: number; action: 'applied' | 'dismissed'; dir: 'down' | 'up' | 'shrink' }
 
 export interface AppData {
   version: number;
@@ -142,4 +162,6 @@ export interface AppData {
   reviews: Record<string, WeeklyReview>;
   settings: Settings;
   unlocked: Record<string, number>; // id logro -> timestamp
+  rituals: Record<string, RitualDay>;
+  adapt: Record<string, AdaptRecord>; // id hábito -> última respuesta
 }

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppData, Entry, FocusSession, Goal, Habit, MoodEntry, Settings, WatchMetrics, WeeklyReview } from './types';
-import { todayKey } from './date';
+import type { AdaptRecord, AppData, Entry, RitualDay, FocusSession, Goal, Habit, MoodEntry, Settings, WatchMetrics, WeeklyReview } from './types';
+import { addDays, todayKey, weekStartOf } from './date';
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -20,6 +20,12 @@ export const DEFAULT_SETTINGS: Settings = {
   pomoGoal: 8,
   pomoAuto: false,
   fontScale: 1,
+  ritualMorning: '08:00',
+  ritualEvening: '21:30',
+  pushMorning: true,
+  pushHabits: true,
+  pushEvening: true,
+  pushActive: false,
 };
 
 export const emptyData = (): AppData => ({
@@ -33,6 +39,8 @@ export const emptyData = (): AppData => ({
   reviews: {},
   settings: { ...DEFAULT_SETTINGS },
   unlocked: {},
+  rituals: {},
+  adapt: {},
 });
 
 interface Actions {
@@ -51,6 +59,10 @@ interface Actions {
   setReview: (r: WeeklyReview) => void;
   setSettings: (s: Partial<Settings>) => void;
   unlock: (ids: string[]) => void;
+  setRitual: (date: string, part: 'morning' | 'evening', v: RitualDay['morning'] | RitualDay['evening'] | null) => void;
+  setAdapt: (habitId: string, r: AdaptRecord) => void;
+  /** cambia la meta desde una fecha, guardando la anterior para no alterar los días pasados */
+  changeGoal: (habitId: string, from: string, change: { target?: number; times?: number }) => void;
   replaceAll: (d: AppData) => void;
   reset: () => void;
 }
@@ -149,6 +161,35 @@ export const useStore = create<Store>()(
           ids.forEach((i) => (u[i] = Date.now()));
           return { unlocked: u };
         }),
+      setRitual: (date, part, v) =>
+        set((s) => {
+          const day = { ...(s.rituals[date] ?? {}) };
+          if (v) (day as Record<string, unknown>)[part] = v;
+          else delete day[part];
+          return { rituals: { ...s.rituals, [date]: day } };
+        }),
+      setAdapt: (id, r) => set((s) => ({ adapt: { ...s.adapt, [id]: r } })),
+      changeGoal: (id, from, change) =>
+        set((s) => ({
+          habits: s.habits.map((h) => {
+            if (h.id !== id) return h;
+            const until = addDays(from, -1);
+            const prev: { until: string; target?: number; times?: number } = { until };
+            const next = { ...h };
+            if (change.target !== undefined) { prev.target = h.target; next.target = change.target; }
+            if (change.times !== undefined && h.frequency.type === 'perWeek') {
+              // la semana en curso ya cuenta con la meta nueva
+              prev.until = addDays(weekStartOf(from, s.settings.weekStart), -1);
+              prev.times = h.frequency.times;
+              next.frequency = { type: 'perWeek', times: change.times };
+            }
+            if (prev.until >= h.createdAt) {
+              const log = (h.goalLog ?? []).filter((g) => g.until < prev.until);
+              next.goalLog = [...log, prev].sort((a, b) => a.until.localeCompare(b.until));
+            }
+            return next;
+          }),
+        })),
       replaceAll: (d) => set({ ...emptyData(), ...d, settings: { ...DEFAULT_SETTINGS, ...d.settings } }),
       reset: () => set(emptyData()),
     }),
@@ -171,6 +212,8 @@ export const useStore = create<Store>()(
         reviews: s.reviews,
         settings: s.settings,
         unlocked: s.unlocked,
+        rituals: s.rituals,
+        adapt: s.adapt,
       }),
     }
   )
@@ -189,5 +232,7 @@ export function getData(): AppData {
     reviews: s.reviews,
     settings: s.settings,
     unlocked: s.unlocked,
+    rituals: s.rituals,
+    adapt: s.adapt,
   };
 }

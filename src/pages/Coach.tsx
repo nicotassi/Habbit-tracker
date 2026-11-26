@@ -6,6 +6,8 @@ import { shortDate, todayKey } from '../lib/date';
 import { CountUp, Empty, Ring, Seg } from '../components/ui';
 import { navigate } from '../router';
 import { ForecastCard } from '../components/Forecast';
+import { AdaptCard } from '../components/AdaptCard';
+import { adaptSuggestions } from '../lib/adapt';
 
 const TONE_COLOR = { good: 'var(--good)', warn: 'var(--warn)', bad: 'var(--bad)', none: 'var(--line-2)' } as const;
 
@@ -52,6 +54,7 @@ export function Coach() {
   const today = todayKey();
   const r = useMemo(() => dailyReport(data, today), [data, today]);
   const w = useMemo(() => weeklyReport(data, today), [data, today]);
+  const adapts = useMemo(() => adaptSuggestions(data, today), [data, today]);
 
   if (!activeHabits(data).length && !Object.keys(data.moods).length) {
     return (
@@ -72,6 +75,13 @@ export function Coach() {
       {!r.enoughData && (
         <div className="past-banner" style={{ marginBottom: 16 }}>
           <span>🌱 Llevás {r.daysWithData} {r.daysWithData === 1 ? 'día' : 'días'} con datos. Con 2 o 3 semanas el análisis se vuelve mucho más preciso.</span>
+        </div>
+      )}
+
+      {adapts.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-head"><div><h3 className="h3">🎚️ Metas a ajustar</h3><span className="sub">Para que cada meta sea un desafío posible</span></div></div>
+          <div className="grid g2">{adapts.map((a) => <AdaptCard key={a.habit.id} s={a} />)}</div>
         </div>
       )}
 

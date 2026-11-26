@@ -8,6 +8,9 @@ import { MoodLogger } from '../components/MoodLogger';
 import { openTimeChooser } from '../components/HabitTimer';
 import { Empty, Ring } from '../components/ui';
 import { navigate } from '../router';
+import { adaptSuggestions } from '../lib/adapt';
+import { AdaptCard } from '../components/AdaptCard';
+import { noteForToday, ritualDue, ritualStreak } from '../lib/rituals';
 
 const MODE_ICON = { recover: '🛌', regain: '🛟', steady: '🎯', push: '🚀', complete: '🏆', closing: '🌙' } as const;
 
@@ -33,6 +36,11 @@ export function Start() {
   const today = todayKey();
   const plan = useMemo(() => buildDayPlan(data, today), [data, today, minute]); // eslint-disable-line
   const name = data.settings.name;
+  const adapt = useMemo(() => adaptSuggestions(data, today)[0], [data, today]);
+  const due = ritualDue(data);
+  const ritual = data.rituals?.[today];
+  const focusItem = ritual?.morning?.focusId ? plan.items.find((i) => i.habit.id === ritual.morning!.focusId) : undefined;
+  const lastNight = noteForToday(data, today);
 
   if (!data.habits.some((h) => !h.archived)) {
     return (
@@ -56,6 +64,18 @@ export function Start() {
         </div>
       </div>
 
+      {/* rituales de 30 segundos */}
+      {due && (
+        <button className={`ritual-cta ${due}`} onClick={() => navigate(`ritual/${due}`)}>
+          <span className="rc-ico" aria-hidden="true">{due === 'morning' ? '☀️' : '🌙'}</span>
+          <span className="grow" style={{ minWidth: 0 }}>
+            <b>{due === 'morning' ? 'Arrancá tu día' : 'Cerrá tu día'}</b>
+            <span className="small">{due === 'morning' ? 'Cómo amaneciste, tu plan y tu foco' : 'Lo que quedó, cómo estuviste y cómo viene mañana'} · 30 s{ritualStreak(data, due) > 1 ? ` · 🔥 ${ritualStreak(data, due)} días seguidos` : ''}</span>
+          </span>
+          <span className="rc-go">Empezar ›</span>
+        </button>
+      )}
+
       {/* tipo de día */}
       <section className={`mode-card ${plan.mode}`}>
         <div className="mode-top">
@@ -73,6 +93,13 @@ export function Start() {
           {plan.progress.nnTotal > 0 && <span className="mode-chip">🔒 {plan.progress.nnDone}/{plan.progress.nnTotal} no negociables</span>}
           {plan.score !== undefined && <button className={`mode-chip ${light(plan.score)}`} onClick={() => navigate('coach')}>🧭 {Math.round(plan.score)} puntos</button>}
         </div>
+        {(focusItem || ritual?.morning?.intention || (lastNight && !ritual?.morning)) && (
+          <div className="mode-focus">
+            {focusItem && <div>🎯 Tu foco: <b>{focusItem.habit.emoji} {focusItem.habit.name}</b>{focusItem.done ? ' ✓' : ''}</div>}
+            {ritual?.morning?.intention && <div>✍️ {ritual.morning.intention}</div>}
+            {lastNight && !ritual?.morning && <div>📝 Anoche te anotaste: {lastNight}</div>}
+          </div>
+        )}
         <p className="mode-quote">“{plan.quote[0]}” <span>— {plan.quote[1]}</span></p>
       </section>
 
@@ -89,7 +116,7 @@ export function Start() {
       )}
 
       {/* chequeo de cómo arrancás */}
-      {plan.needsCheckIn && (
+      {plan.needsCheckIn && due !== 'morning' && (
         <section className="card checkin">
           <div className="card-head" style={{ marginBottom: 8 }}><h3 className="h3">¿Cómo arrancás hoy?</h3><span className="sub">Así ajusto tu plan</span></div>
           <MoodLogger date={today} compact />
@@ -127,6 +154,8 @@ export function Start() {
         </section>
 
         <div className="col" style={{ gap: 12, minWidth: 0 }}>
+          {adapt && <AdaptCard s={adapt} />}
+          {ritual?.evening && <div className="card soft small">🌙 Día cerrado{ritual.evening.win ? ` · Lo mejor: ${ritual.evening.win}` : ''}</div>}
           {plan.stakes.length > 0 && (
             <section className="card">
               <div className="card-head" style={{ marginBottom: 8 }}><h3 className="h3">🎲 Lo que está en juego hoy</h3></div>

@@ -74,7 +74,7 @@ function Chip({ h, date }: { h: Habit; date: string }) {
   const logs = useStore((s) => s.logs);
   const e = entryOf(logs, date, h.id);
   const done = isDone(h, e, date);
-  const prog = progressOf(h, e);
+  const prog = progressOf(h, e, date);
   return (
     <button className={`day-chip ${done ? 'done' : ''} ${h.nonNegotiable ? 'nn' : ''}`} style={{ ['--hc' as string]: h.color }} onClick={(ev) => toggle(h, date, ev.currentTarget)}
       title={h.kind === 'check' ? (done ? 'Desmarcar' : 'Marcar como hecho') : 'Ver hábito'}>

@@ -18,19 +18,32 @@ export function matchesDay(h: Habit, date: string): boolean {
   return true;
 }
 
+/** Meta vigente ese día (las metas que se ajustaron guardan las anteriores en goalLog). */
+export function targetOn(h: Habit, date?: string): number {
+  if (date && h.goalLog) for (const g of h.goalLog) if (date <= g.until && g.target !== undefined) return g.target;
+  return h.target;
+}
+
+/** Veces por semana vigentes esa semana (para hábitos "N por semana"). */
+export function timesOn(h: Habit, date?: string): number {
+  const now = h.frequency.type === 'perWeek' ? h.frequency.times : 1;
+  if (date && h.goalLog) for (const g of h.goalLog) if (date <= g.until && g.times !== undefined) return g.times;
+  return now;
+}
+
 export function isDone(h: Habit, e: Entry | undefined, date?: string): boolean {
   if (h.kind === 'avoid') {
     if (date && (date < h.createdAt || date > todayKey())) return false;
     return !e || e.value <= 0;
   }
   if (!e) return false;
-  return e.value >= (h.kind === 'check' ? 1 : h.target);
+  return e.value >= (h.kind === 'check' ? 1 : targetOn(h, date));
 }
 
-export function progressOf(h: Habit, e: Entry | undefined): number {
+export function progressOf(h: Habit, e: Entry | undefined, date?: string): number {
   if (h.kind === 'avoid') return e && e.value > 0 ? 0 : 1;
   if (!e) return 0;
-  const t = h.kind === 'check' ? 1 : h.target || 1;
+  const t = h.kind === 'check' ? 1 : targetOn(h, date) || 1;
   return Math.max(0, Math.min(1, e.value / t));
 }
 
@@ -54,7 +67,7 @@ export function countsForDay(h: Habit, logs: Logs, date: string, weekStart: 0 | 
     const ws = weekStartOf(date, weekStart);
     let before = 0;
     for (let d = ws; d < date; d = addDays(d, 1)) if (isDone(h, entryOf(logs, d, h.id), d)) before++;
-    return before < h.frequency.times;
+    return before < timesOn(h, ws);
   }
   return true;
 }
@@ -68,7 +81,7 @@ export function dayStats(data: AppData, date: string, habits = activeHabits(data
     total++;
     const e = entryOf(data.logs, date, h.id);
     if (isDone(h, e, date)) done++;
-    progress += progressOf(h, e);
+    progress += progressOf(h, e, date);
   }
   return { total, done, rate: total ? done / total : 0, progress: total ? progress / total : 0 };
 }
@@ -85,13 +98,12 @@ export interface StreakInfo {
 
 export function streaks(h: Habit, logs: Logs, weekStart: 0 | 1, today = todayKey()): StreakInfo {
   if (h.frequency.type === 'perWeek') {
-    const times = h.frequency.times;
     const startW = weekStartOf(h.createdAt, weekStart);
     const thisW = weekStartOf(today, weekStart);
     let best = 0;
     let run = 0;
     const weeks: boolean[] = [];
-    for (let w = startW; w <= thisW; w = addDays(w, 7)) weeks.push(weekCount(h, logs, w, weekStart) >= times);
+    for (let w = startW; w <= thisW; w = addDays(w, 7)) weeks.push(weekCount(h, logs, w, weekStart) >= timesOn(h, w));
     weeks.forEach((ok) => {
       run = ok ? run + 1 : 0;
       best = Math.max(best, run);
@@ -140,14 +152,14 @@ export function strengthSeries(h: Habit, logs: Logs, weekStart: 0 | 1, end = tod
       const ws = weekStartOf(d, weekStart);
       const elapsed = diffDays(d, ws) + 1;
       const c = weekCount(h, logs, d, weekStart);
-      const expected = (h.frequency.times * elapsed) / 7;
+      const expected = (timesOn(h, ws) * elapsed) / 7;
       const v = Math.min(1, c / Math.max(expected, 0.0001));
       score = score + alpha * (v - score);
     } else if (isScheduled(h, d)) {
       const e = entryOf(logs, d, h.id);
       if (!e?.skipped) {
         const isToday = d === end;
-        const v = progressOf(h, e);
+        const v = progressOf(h, e, d);
         if (!(isToday && v === 0 && h.kind !== 'avoid')) score = score + alpha * (v - score);
       }
     }
@@ -168,7 +180,7 @@ export function completionRate(h: Habit, logs: Logs, from: string, to: string, w
     for (let w = weekStartOf(from, weekStart); w <= to; w = addDays(w, 7)) {
       if (addDays(w, 6) < h.createdAt) continue;
       total++;
-      met += Math.min(1, weekCount(h, logs, w, weekStart) / h.frequency.times);
+      met += Math.min(1, weekCount(h, logs, w, weekStart) / timesOn(h, w));
     }
     return total ? met / total : 0;
   }
