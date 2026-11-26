@@ -18,6 +18,12 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 
 ## Funciones
 
+**Inicio: el motor del día** (la pantalla con la que abre la app)
+- Decide qué tipo de día es (recuperación, recuperar el ritmo, constancia, ir por más, cierre del día o día completo) cruzando sueño, estrés, energía, ánimo, puntaje de Cómo vas y hábitos caídos, con su enfoque y una frase.
+- “Tu próximo paso”: una sola cosa para hacer ya, con el botón para empezarla (marcar, sumar o ▶ cronómetro/pomodoro).
+- “Tu plan de hoy”: los hábitos del día ordenados por prioridad (no negociables → rescates → días que te cuestan → horario) y cada uno con su motivo: 🔒 No negociable, 🛟 Ayer no salió, ⚠️ Los lunes te cuesta, 🔥 Racha que crece hoy, 🧬 a días de volverse automático, ✨ lo que te mejora según tus datos, 🪶 versión mínima en días difíciles.
+- “Lo que está en juego hoy” (rachas, día perfecto, nivel, no negociables), “Por qué te conviene” (patrones de tus datos) y los consejos de Cómo vas. Si no registraste el ánimo, te lo pide para ajustar el plan.
+
 **Hábitos (sin límite)**
 - 4 tipos: Sí/No, Contador (vasos de agua), Cantidad con unidad (min, páginas, km, $) y **Evitar** (malos hábitos: cada día limpio cuenta).
 - Frecuencias: todos los días, días específicos o X veces por semana.

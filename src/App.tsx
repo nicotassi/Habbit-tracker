@@ -26,8 +26,10 @@ import { Achievements } from './pages/Achievements';
 import { Settings } from './pages/Settings';
 import { Coach } from './pages/Coach';
 import { Day } from './pages/Day';
+import { Start } from './pages/Start';
 
 const NAV = [
+  { id: 'inicio', ico: '🚀', label: 'Inicio' },
   { id: 'today', ico: '☀️', label: 'Hoy' },
   { id: 'coach', ico: '🧭', label: 'Cómo vas' },
   { id: 'habits', ico: '🌱', label: 'Hábitos' },
@@ -39,7 +41,7 @@ const NAV = [
   { id: 'achievements', ico: '🏆', label: 'Logros' },
   { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
 ];
-const MOBILE = ['today', 'habits', 'mood', 'analytics', 'focus'];
+const MOBILE = ['inicio', 'today', 'habits', 'analytics', 'mood'];
 
 /** Puerta de entrada: sin sesión muestra el login; con sesión, la app y la sincronización con la nube. */
 export default function Root() {
@@ -99,7 +101,7 @@ function UpdateBanner() {
 
 function App() {
   const route = useRoute();
-  const page = route[0] ?? 'today';
+  const page = route[0] ?? 'inicio';
   const data = useStore();
   const [palette, setPalette] = useState(false);
   const [newHabit, setNewHabit] = useState(false);
@@ -219,7 +221,8 @@ function App() {
       case 'ajustes': return <Settings />;
       case 'coach': return <Coach />;
       case 'dia': return <Day />;
-      default: return <Today />;
+      case 'today': return <Today />;
+      default: return <Start />;
     }
   })();
   const active = page === 'habit' ? 'habits' : page;
@@ -240,8 +243,8 @@ function App() {
         </button>
         {NAV.map((n, i) => (
           <Fragment key={n.id}>
-            {i === 6 && <div className="nav-section">Crecimiento</div>}
-            {i === 9 && <div className="nav-section">Sistema</div>}
+            {i === 7 && <div className="nav-section">Crecimiento</div>}
+            {i === 10 && <div className="nav-section">Sistema</div>}
             <button className={`nav-item ${active === n.id ? 'active' : ''}`} onClick={() => navigate(n.id)}>
               <span className="ico">{n.ico}</span>{n.label}
             </button>
@@ -257,7 +260,7 @@ function App() {
       </aside>
 
       <header className="topbar">
-        <button className="brand" style={{ border: 0, background: 'transparent', padding: 0 }} onClick={() => go('today')}>
+        <button className="brand" style={{ border: 0, background: 'transparent', padding: 0 }} onClick={() => go('inicio')}>
           <BrandMark size={30} />
           <span className="brand-name" style={{ fontSize: 24 }}>Ritmo</span>
         </button>
