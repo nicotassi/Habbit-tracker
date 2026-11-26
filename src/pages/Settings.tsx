@@ -8,7 +8,7 @@ import { navigate } from '../router';
 import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
 import { InstallCard } from '../components/Install';
 import { applyUpdate, checkForUpdate } from '../lib/update';
-import { disablePush, enablePush, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush } from '../lib/push';
+import { disablePush, enablePush, lastPushError, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush, type EnableResult } from '../lib/push';
 
 // Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
 const embedded = window.top !== window;
@@ -188,15 +188,26 @@ function NotifyCard() {
   const { settings, setSettings } = useStore();
   const [on, setOn] = useState(pushOnThisDevice());
   const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState('');
+  const [problem, setProblem] = useState('');
   const enable = async () => {
     setBusy(true);
-    const r = await enablePush();
+    setProblem('');
+    const r = await enablePush(setStep);
     setBusy(false);
+    setStep('');
+    const msg: Partial<Record<EnableResult, string>> = {
+      install: 'En iPhone, primero agregá Ritmo a la pantalla de inicio (Compartir → Agregar a inicio), abrila desde ese ícono y activá los avisos ahí.',
+      denied: 'El permiso de notificaciones está bloqueado. Habilitalo en los ajustes del celular (Notificaciones → Ritmo, o en el navegador: Configuración del sitio → Notificaciones) y probá de nuevo.',
+      unsupported: 'Este navegador no soporta avisos push. Probá con Chrome en Android o con la app agregada a inicio en iPhone.',
+      'perm-timeout': 'No llegó la respuesta al permiso. Puede que el navegador lo haya mostrado chiquito (una campanita en la barra de direcciones) o lo haya bloqueado solo. Habilitá las notificaciones para este sitio en la configuración del navegador y tocá Activar de nuevo.',
+      sw: 'La app no terminó de prepararse en este dispositivo. Cerrala del todo, volvé a abrirla y tocá Activar de nuevo.',
+      subscribe: 'El servicio de avisos del celular no respondió. Revisá que el navegador tenga permitido mandar notificaciones y que no estés en modo ahorro de datos, y probá de nuevo.',
+      server: 'No se pudo guardar en el servidor. Revisá tu conexión y probá de nuevo.',
+      error: 'No se pudieron activar los avisos. Probá de nuevo.',
+    };
     if (r === 'ok') { setOn(true); toast('Avisos activados en este dispositivo', '🔔'); }
-    else if (r === 'install') toast('En iPhone, primero agregá Ritmo a la pantalla de inicio (Compartir → Agregar a inicio) y activá los avisos desde ahí', '📲');
-    else if (r === 'denied') toast('Permiso denegado. Habilitá las notificaciones de Ritmo en los ajustes del celular', '🔕');
-    else if (r === 'unsupported') toast('Este navegador no soporta avisos push', '🔕');
-    else toast('No se pudieron activar los avisos. Probá de nuevo', '⚠️');
+    else setProblem(`${msg[r] ?? msg.error}${lastPushError ? ` (detalle: ${lastPushError})` : ''}`);
   };
   const disable = async () => { await disablePush(); setOn(false); toast('Avisos desactivados en este dispositivo', '🔕'); };
   return (
@@ -213,7 +224,8 @@ function NotifyCard() {
         </div>
       ) : (
         <div className="col" style={{ gap: 6 }}>
-          <button className="btn primary" disabled={busy} onClick={enable} style={{ alignSelf: 'flex-start' }}>{busy ? 'Activando…' : 'Activar avisos en este dispositivo'}</button>
+          <button className="btn primary" disabled={busy} onClick={enable} style={{ alignSelf: 'flex-start' }}>{busy ? step || 'Activando…' : 'Activar avisos en este dispositivo'}</button>
+          {problem && <div className="coach-note warn"><span className="cn-ico">⚠️</span><div className="small">{problem}</div></div>}
           {pushNeedsInstall() && <span className="tiny muted">En iPhone los avisos funcionan con Ritmo agregado a la pantalla de inicio (Compartir → Agregar a inicio).</span>}
           {!pushNeedsInstall() && !pushSupported() && <span className="tiny muted">Este navegador no soporta avisos push.</span>}
         </div>

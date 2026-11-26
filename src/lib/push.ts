@@ -132,28 +132,76 @@ function keyBytes(b64: string): Uint8Array {
   return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
-export type EnableResult = 'ok' | 'denied' | 'unsupported' | 'install' | 'error';
+export type EnableResult = 'ok' | 'denied' | 'unsupported' | 'install' | 'perm-timeout' | 'sw' | 'subscribe' | 'server' | 'error';
 
-/** Pide permiso, suscribe este dispositivo y sube la agenda. */
-export async function enablePush(): Promise<EnableResult> {
+class StepError extends Error { constructor(public code: EnableResult, public detail = '') { super(code); } }
+
+const withTimeout = <T,>(p: Promise<T>, ms: number, code: EnableResult): Promise<T> =>
+  Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new StepError(code, 'tiempo agotado')), ms))]);
+
+/** Service worker activo (lo registra si hace falta). */
+async function activeRegistration(): Promise<ServiceWorkerRegistration> {
+  let reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
+  if (reg.active) return reg;
+  return withTimeout(navigator.serviceWorker.ready, 15000, 'sw');
+}
+
+export let lastPushError = '';
+
+/** Pide permiso, suscribe este dispositivo y sube la agenda. `onStep` cuenta en qué paso va. */
+export async function enablePush(onStep: (s: string) => void = () => {}): Promise<EnableResult> {
   if (pushNeedsInstall()) return 'install';
   if (!pushSupported()) return 'unsupported';
   const s = useCloud.getState().session;
   if (!s) return 'error';
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted') return 'denied';
+  lastPushError = '';
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const key = await rpc<string>('ritmo_vapid', {});
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) as BufferSource });
-    await rpc('ritmo_push_sub', { p_user: s.user, p_token: s.token, p_sub: sub.toJSON() });
+    onStep('Pidiendo permiso…');
+    let perm = Notification.permission;
+    if (perm !== 'granted') {
+      // se pide siempre (algunos navegadores informan mal el estado); tiene que salir directo del toque
+      const asked = Notification.requestPermission();
+      perm = await withTimeout(Promise.resolve(asked ?? Notification.permission), 25000, 'perm-timeout');
+    }
+    if (perm !== 'granted') return 'denied';
+
+    onStep('Preparando la app…');
+    const reg = await withTimeout(activeRegistration(), 20000, 'sw');
+
+    onStep('Conectando…');
+    const key = await withTimeout(rpc<string>('ritmo_vapid', {}), 15000, 'server');
+    let sub = await withTimeout(reg.pushManager.getSubscription(), 10000, 'subscribe');
+    // una suscripción vieja con otra clave no sirve: se rehace
+    const appKey = sub?.options?.applicationServerKey;
+    if (sub && appKey && btoa(String.fromCharCode(...new Uint8Array(appKey))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') !== key) {
+      await sub.unsubscribe().catch(() => {});
+      sub = null;
+    }
+    if (!sub) {
+      try {
+        sub = await withTimeout(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) as BufferSource }), 20000, 'subscribe');
+      } catch (e) {
+        if (e instanceof StepError) throw e;
+        throw new StepError('subscribe', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+      }
+    }
+
+    onStep('Guardando…');
+    try {
+      await withTimeout(rpc('ritmo_push_sub', { p_user: s.user, p_token: s.token, p_sub: sub.toJSON() }), 15000, 'server');
+    } catch (e) {
+      if (e instanceof StepError) throw e;
+      throw new StepError('server', e instanceof Error ? e.message : String(e));
+    }
     try { localStorage.setItem(DEVICE_KEY, '1'); } catch { /* sin almacenamiento */ }
     useStore.getState().setSettings({ pushActive: true, notifications: true });
     lastSent = '';
     await uploadPlan();
     return 'ok';
-  } catch {
+  } catch (e) {
+    if (e instanceof StepError) { lastPushError = e.detail; return e.code; }
+    lastPushError = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     return 'error';
   }
 }
