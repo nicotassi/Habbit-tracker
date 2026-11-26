@@ -290,7 +290,7 @@ export async function disablePush(): Promise<void> {
   } catch { /* nada que desuscribir */ }
 }
 
-/** Aviso de prueba: llega en menos de un minuto, aunque cierres la app. */
+/** Aviso de prueba: llega en 1 o 2 minutos, aunque cierres la app. */
 export async function testPush(): Promise<void> {
   const now = new Date(Date.now() + 5000);
   lastSent = '';

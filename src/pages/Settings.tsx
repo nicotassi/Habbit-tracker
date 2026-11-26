@@ -226,7 +226,7 @@ function NotifyCard() {
       {on ? (
         <div className="row wrap" style={{ gap: 8 }}>
           <span className="pill good">✓ Activados en este dispositivo</span>
-          <button className="btn sm" onClick={async () => { await testPush(); toast('Te mando uno de prueba: llega en menos de un minuto', '🔔'); }}>Probar</button>
+          <button className="btn sm" onClick={async () => { await testPush(); toast('Te mando uno de prueba: llega en 1 o 2 minutos', '🔔'); }}>Probar</button>
           <button className="btn sm ghost" onClick={disable}>Desactivar</button>
         </div>
       ) : (
