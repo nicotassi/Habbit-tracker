@@ -8,7 +8,7 @@ import { navigate } from '../router';
 import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
 import { InstallCard } from '../components/Install';
 import { applyUpdate, checkForUpdate } from '../lib/update';
-import { disablePush, enablePush, lastPushError, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush, type EnableResult } from '../lib/push';
+import { disablePush, enablePush, lastPushError, waitForPermission, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush, type EnableResult } from '../lib/push';
 
 // Dentro de un iframe (p. ej. el visor de claude.ai) las descargas están bloqueadas.
 const embedded = window.top !== window;
@@ -190,6 +190,7 @@ function NotifyCard() {
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState('');
   const [problem, setProblem] = useState('');
+  const [manual, setManual] = useState(false);
   const enable = async () => {
     setBusy(true);
     setProblem('');
@@ -200,13 +201,18 @@ function NotifyCard() {
       install: 'En iPhone, primero agregá Ritmo a la pantalla de inicio (Compartir → Agregar a inicio), abrila desde ese ícono y activá los avisos ahí.',
       denied: 'El permiso de notificaciones está bloqueado. Habilitalo en los ajustes del celular (Notificaciones → Ritmo, o en el navegador: Configuración del sitio → Notificaciones) y probá de nuevo.',
       unsupported: 'Este navegador no soporta avisos push. Probá con Chrome en Android o con la app agregada a inicio en iPhone.',
-      'perm-timeout': 'No llegó la respuesta al permiso. Puede que el navegador lo haya mostrado chiquito (una campanita en la barra de direcciones) o lo haya bloqueado solo. Habilitá las notificaciones para este sitio en la configuración del navegador y tocá Activar de nuevo.',
+      'perm-timeout': '',
       sw: 'La app no terminó de prepararse en este dispositivo. Cerrala del todo, volvé a abrirla y tocá Activar de nuevo.',
       subscribe: 'El servicio de avisos del celular no respondió. Revisá que el navegador tenga permitido mandar notificaciones y que no estés en modo ahorro de datos, y probá de nuevo.',
       server: 'No se pudo guardar en el servidor. Revisá tu conexión y probá de nuevo.',
       error: 'No se pudieron activar los avisos. Probá de nuevo.',
     };
-    if (r === 'ok') { setOn(true); toast('Avisos activados en este dispositivo', '🔔'); }
+    if (r === 'ok') { setOn(true); setManual(false); toast('Avisos activados en este dispositivo', '🔔'); }
+    else if (r === 'perm-timeout') {
+      setManual(true);
+      // cuando lo habilites en la configuración, se activa solo al volver a la app
+      if (await waitForPermission()) { setManual(false); void enable(); }
+    }
     else setProblem(`${msg[r] ?? msg.error}${lastPushError ? ` (detalle: ${lastPushError})` : ''}`);
   };
   const disable = async () => { await disablePush(); setOn(false); toast('Avisos desactivados en este dispositivo', '🔕'); };
@@ -225,6 +231,20 @@ function NotifyCard() {
       ) : (
         <div className="col" style={{ gap: 6 }}>
           <button className="btn primary" disabled={busy} onClick={enable} style={{ alignSelf: 'flex-start' }}>{busy ? step || 'Activando…' : 'Activar avisos en este dispositivo'}</button>
+          {manual && (
+            <div className="coach-note warn perm-help">
+              <span className="cn-ico">🔔</span>
+              <div className="small">
+                <b>Tu navegador no mostró el pedido de permiso.</b> Habilitalo a mano (una sola vez) y volvé acá: se activa solo.
+                <ol>
+                  <li><b>Con Ritmo instalada:</b> mantené apretado el ícono de Ritmo → <i>Información de la app</i> → <i>Notificaciones</i> → activalas.</li>
+                  <li><b>En Chrome:</b> abrí <i>nicotassi.github.io/Habbit-tracker</i>, tocá el ícono a la izquierda de la dirección (🔒 o ⚙️) → <i>Permisos</i> → <i>Notificaciones</i> → <i>Permitir</i>.</li>
+                  <li>Si en Chrome ves una campanita tachada en la barra de direcciones, tocala y elegí <i>Permitir</i>.</li>
+                </ol>
+                <button className="btn sm" onClick={enable}>Ya lo habilité: activar</button>
+              </div>
+            </div>
+          )}
           {problem && <div className="coach-note warn"><span className="cn-ico">⚠️</span><div className="small">{problem}</div></div>}
           {pushNeedsInstall() && <span className="tiny muted">En iPhone los avisos funcionan con Ritmo agregado a la pantalla de inicio (Compartir → Agregar a inicio).</span>}
           {!pushNeedsInstall() && !pushSupported() && <span className="tiny muted">Este navegador no soporta avisos push.</span>}

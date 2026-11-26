@@ -149,6 +149,17 @@ async function activeRegistration(): Promise<ServiceWorkerRegistration> {
 
 export let lastPushError = '';
 
+/** Espera (hasta 2 minutos) a que el permiso quede habilitado desde la configuración. */
+export function waitForPermission(): Promise<boolean> {
+  return new Promise((res) => {
+    const t0 = Date.now();
+    const i = setInterval(() => {
+      if (Notification.permission === 'granted') { clearInterval(i); res(true); }
+      else if (Date.now() - t0 > 120000) { clearInterval(i); res(false); }
+    }, 1000);
+  });
+}
+
 /** Pide permiso, suscribe este dispositivo y sube la agenda. `onStep` cuenta en qué paso va. */
 export async function enablePush(onStep: (s: string) => void = () => {}): Promise<EnableResult> {
   if (pushNeedsInstall()) return 'install';
@@ -161,8 +172,15 @@ export async function enablePush(onStep: (s: string) => void = () => {}): Promis
     let perm = Notification.permission;
     if (perm !== 'granted') {
       // se pide siempre (algunos navegadores informan mal el estado); tiene que salir directo del toque
-      const asked = Notification.requestPermission();
-      perm = await withTimeout(Promise.resolve(asked ?? Notification.permission), 25000, 'perm-timeout');
+      const asked = Promise.resolve(Notification.requestPermission() ?? Notification.permission);
+      // si el navegador no muestra el pedido (Chrome a veces lo "silencia"), se sigue igual apenas
+      // el permiso se habilita a mano en la configuración
+      const watch = new Promise<NotificationPermission>((res) => {
+        const i = setInterval(() => { if (Notification.permission === 'granted') { clearInterval(i); res('granted'); } }, 700);
+        setTimeout(() => clearInterval(i), 120000);
+      });
+      onStep('Esperando el permiso…');
+      perm = await withTimeout(Promise.race([asked, watch]), 9000, 'perm-timeout');
     }
     if (perm !== 'granted') return 'denied';
 
