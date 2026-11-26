@@ -160,19 +160,67 @@ export function waitForPermission(): Promise<boolean> {
   });
 }
 
+/* Diagnóstico: cada intento de activación deja un registro de sus pasos en la cuenta
+   (tabla ritmo_push_diag), así se puede ver en qué paso falla un celular sin pedir capturas. */
+let diagLog: { attempt: string; t0: number; steps: Record<string, unknown>[] } | null = null;
+function diag(step: string, extra: Record<string, unknown> = {}) {
+  const s = useCloud.getState().session;
+  if (!s || !diagLog) return;
+  diagLog.steps.push({ ms: Date.now() - diagLog.t0, step, ...extra });
+  rpc('ritmo_push_diag', { p_user: s.user, p_token: s.token, p_attempt: diagLog.attempt, p_info: { steps: diagLog.steps } }).catch(() => {});
+}
+const errText = (e: unknown) => (e instanceof StepError ? `${e.code} ${e.detail}` : e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+
+async function environment(): Promise<Record<string, unknown>> {
+  const env: Record<string, unknown> = {
+    ua: navigator.userAgent,
+    standalone: isStandalone(),
+    displayMode: ['standalone', 'minimal-ui', 'fullscreen', 'browser'].find((m) => matchMedia(`(display-mode: ${m})`).matches),
+    notifPermission: typeof Notification !== 'undefined' ? Notification.permission : 'sin Notification',
+    pushManager: 'PushManager' in window,
+    controller: !!navigator.serviceWorker?.controller,
+    version: typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '',
+  };
+  try { env.permQuery = (await navigator.permissions.query({ name: 'notifications' as PermissionName })).state; } catch (e) { env.permQuery = errText(e); }
+  try {
+    const reg = await withTimeout(navigator.serviceWorker.getRegistration(), 4000, 'sw');
+    env.reg = reg ? { scope: reg.scope, active: reg.active?.state ?? null, waiting: !!reg.waiting, installing: !!reg.installing } : null;
+    if (reg) {
+      try { env.pushPermState = await withTimeout(reg.pushManager.permissionState({ userVisibleOnly: true }), 4000, 'subscribe'); } catch (e) { env.pushPermState = errText(e); }
+      try { env.hasSub = !!(await withTimeout(reg.pushManager.getSubscription(), 4000, 'subscribe')); } catch (e) { env.hasSub = errText(e); }
+    }
+  } catch (e) { env.reg = errText(e); }
+  return env;
+}
+
 /** Pide permiso, suscribe este dispositivo y sube la agenda. `onStep` cuenta en qué paso va. */
 export async function enablePush(onStep: (s: string) => void = () => {}): Promise<EnableResult> {
-  if (pushNeedsInstall()) return 'install';
-  if (!pushSupported()) return 'unsupported';
+  diagLog = { attempt: Math.random().toString(36).slice(2, 10), t0: Date.now(), steps: [] };
+  // el pedido de permiso tiene que salir directo del toque: se lanza antes de cualquier espera
+  const needAsk = typeof Notification !== 'undefined' && Notification.permission !== 'granted' && !pushNeedsInstall();
+  let early: Promise<NotificationPermission> | null = null;
+  if (needAsk) {
+    try { early = Promise.resolve(Notification.requestPermission() ?? Notification.permission); } catch (e) { early = Promise.reject(e); }
+    early.then((r) => diag('respuesta del permiso', { result: r }), (e) => diag('error del permiso', { error: errText(e) }));
+  }
+  void environment().then((env) => diag('inicio', env));
+  if (pushNeedsInstall()) { diag('fin', { result: 'install' }); return 'install'; }
+  if (!pushSupported()) { diag('fin', { result: 'unsupported' }); return 'unsupported'; }
   const s = useCloud.getState().session;
   if (!s) return 'error';
   lastPushError = '';
+  const r = await enableSteps(onStep, early, s);
+  diag('fin', { result: r, detail: lastPushError });
+  return r;
+}
+
+async function enableSteps(onStep: (s: string) => void, early: Promise<NotificationPermission> | null, s: { user: string; token: string }): Promise<EnableResult> {
   try {
     onStep('Pidiendo permiso…');
     let perm = Notification.permission;
     if (perm !== 'granted') {
       // se pide siempre (algunos navegadores informan mal el estado); tiene que salir directo del toque
-      const asked = Promise.resolve(Notification.requestPermission() ?? Notification.permission);
+      const asked = early ?? Promise.resolve(Notification.requestPermission() ?? Notification.permission);
       // si el navegador no muestra el pedido (Chrome a veces lo "silencia"), se sigue igual apenas
       // el permiso se habilita a mano en la configuración
       const watch = new Promise<NotificationPermission>((res) => {
@@ -182,10 +230,12 @@ export async function enablePush(onStep: (s: string) => void = () => {}): Promis
       onStep('Esperando el permiso…');
       perm = await withTimeout(Promise.race([asked, watch]), 9000, 'perm-timeout');
     }
+    diag('permiso', { perm });
     if (perm !== 'granted') return 'denied';
 
     onStep('Preparando la app…');
     const reg = await withTimeout(activeRegistration(), 20000, 'sw');
+    diag('service worker listo', { active: reg.active?.state });
 
     onStep('Conectando…');
     const key = await withTimeout(rpc<string>('ritmo_vapid', {}), 15000, 'server');
@@ -196,6 +246,7 @@ export async function enablePush(onStep: (s: string) => void = () => {}): Promis
       await sub.unsubscribe().catch(() => {});
       sub = null;
     }
+    diag('suscripción previa', { has: !!sub });
     if (!sub) {
       try {
         sub = await withTimeout(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) as BufferSource }), 20000, 'subscribe');
@@ -205,6 +256,7 @@ export async function enablePush(onStep: (s: string) => void = () => {}): Promis
       }
     }
 
+    diag('suscripto', { endpoint: sub.endpoint.slice(0, 60) });
     onStep('Guardando…');
     try {
       await withTimeout(rpc('ritmo_push_sub', { p_user: s.user, p_token: s.token, p_sub: sub.toJSON() }), 15000, 'server');
@@ -218,6 +270,7 @@ export async function enablePush(onStep: (s: string) => void = () => {}): Promis
     await uploadPlan();
     return 'ok';
   } catch (e) {
+    diag('error', { error: errText(e) });
     if (e instanceof StepError) { lastPushError = e.detail; return e.code; }
     lastPushError = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     return 'error';

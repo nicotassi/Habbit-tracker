@@ -96,3 +96,24 @@ grant execute on function public.ritmo_vapid(), public.ritmo_push_sub(text, text
 --     url := 'https://qsijvmbhblestmrjhznw.supabase.co/functions/v1/ritmo-push',
 --     headers := jsonb_build_object('Content-Type', 'application/json', 'x-ritmo-cron', (select v from public.ritmo_config where k = 'cron_secret')),
 --     body := '{}'::jsonb)$$);
+
+-- Diagnóstico de la activación de avisos: cada intento guarda sus pasos (se borran a los 14 días).
+create table if not exists public.ritmo_push_diag (
+  id bigserial primary key,
+  username text not null references public.ritmo_users(username) on delete cascade,
+  attempt text not null,
+  at timestamptz not null default now(),
+  info jsonb not null
+);
+alter table public.ritmo_push_diag enable row level security;
+revoke all on public.ritmo_push_diag from anon, authenticated;
+create or replace function public.ritmo_push_diag(p_user text, p_token text, p_attempt text, p_info jsonb) returns void
+language plpgsql security definer set search_path = 'public', 'extensions' as $$
+declare u text := ritmo_check(p_user, p_token);
+begin
+  if pg_column_size(p_info) > 20000 then return; end if;
+  insert into ritmo_push_diag(username, attempt, info) values (u, left(coalesce(p_attempt, ''), 40), p_info);
+  delete from ritmo_push_diag where username = u and at < now() - interval '14 days';
+end $$;
+revoke all on function public.ritmo_push_diag(text, text, text, jsonb) from public;
+grant execute on function public.ritmo_push_diag(text, text, text, jsonb) to anon, authenticated;
