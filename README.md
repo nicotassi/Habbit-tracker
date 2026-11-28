@@ -86,6 +86,7 @@ Para ver todos los análisis funcionando enseguida: **Ajustes → Cargar demo** 
 - Objetivos con ritmo necesario (“necesitás ~3 por semana”) y revisión semanal.
 - XP, niveles y 26 logros desbloqueables. Confeti y sonido al completar.
 - Paleta de comandos (⌘K / Ctrl+K), atajos de teclado (N, 1–8).
+- **Pestañas de abajo a tu gusto:** en Más → Editar pestañas (o en Ajustes) elegís hasta 5 secciones para la barra de abajo y su orden; el resto queda en “Más”. Se guarda en tu cuenta.
 - Tema claro/oscuro/grafito/sistema, color de acento y tamaño de letra (5 niveles).
 - Exportar backup JSON / CSV e importar.
 

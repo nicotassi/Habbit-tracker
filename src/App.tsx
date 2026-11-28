@@ -27,23 +27,11 @@ import { Settings } from './pages/Settings';
 import { Coach } from './pages/Coach';
 import { Day } from './pages/Day';
 import { Start } from './pages/Start';
+import { NAV, useTabs } from './lib/nav';
+import { NavEditor } from './components/NavEditor';
 import { Ritual } from './pages/Ritual';
 import { pushOnThisDevice, startPushSync } from './lib/push';
 
-const NAV = [
-  { id: 'inicio', ico: '🚀', label: 'Inicio' },
-  { id: 'today', ico: '☀️', label: 'Hoy' },
-  { id: 'coach', ico: '🧭', label: 'Cómo vas' },
-  { id: 'habits', ico: '🌱', label: 'Hábitos' },
-  { id: 'analytics', ico: '📊', label: 'Análisis' },
-  { id: 'mood', ico: '🫶', label: 'Ánimo' },
-  { id: 'calendar', ico: '🗓️', label: 'Calendario' },
-  { id: 'focus', ico: '🍅', label: 'Pomodoro' },
-  { id: 'goals', ico: '🚩', label: 'Objetivos' },
-  { id: 'achievements', ico: '🏆', label: 'Logros' },
-  { id: 'ajustes', ico: '⚙️', label: 'Ajustes' },
-];
-const MOBILE = ['inicio', 'today', 'habits', 'analytics', 'mood'];
 
 /** Puerta de entrada: sin sesión muestra el login; con sesión, la app y la sincronización con la nube. */
 export default function Root() {
@@ -116,6 +104,8 @@ function App() {
   const [palette, setPalette] = useState(false);
   const [newHabit, setNewHabit] = useState(false);
   const [more, setMore] = useState(false);
+  const [editTabs, setEditTabs] = useState(false);
+  const MOBILE = useTabs();
 
   // Pomodoro: revisa el temporizador en cualquier pestaña y avisa al terminar cada fase
   useEffect(() => {
@@ -288,9 +278,9 @@ function App() {
       <main className="main"><div className="page-anim" key={route.join("-")}>{content}</div></main>
 
       <nav className="mobile-nav">
-        {NAV.filter((n) => MOBILE.includes(n.id)).map((n) => (
+        {MOBILE.map((id) => NAV.find((n) => n.id === id)!).map((n) => (
           <button key={n.id} className={active === n.id && !more ? 'active' : ''} onClick={() => go(n.id)}>
-            <span className="ico">{n.ico}</span>{n.label}
+            <span className="ico">{n.ico}</span><span className="lbl">{n.label}</span>
           </button>
         ))}
         <button className={more || (!MOBILE.includes(active)) ? 'active' : ''} onClick={() => setMore((m) => !m)}><span className="ico">☰</span>Más</button>
@@ -307,6 +297,7 @@ function App() {
               ))}
               <button className="sheet-item" onClick={() => { setMore(false); setNewHabit(true); }}><span className="ico">➕</span>Nuevo hábito</button>
               <button className="sheet-item" onClick={() => { setMore(false); setPalette(true); }}><span className="ico">🔎</span>Buscar</button>
+              <button className="sheet-item" onClick={() => { setMore(false); setEditTabs(true); }}><span className="ico">✏️</span>Editar pestañas</button>
             </div>
           </div>
         </div>
@@ -314,6 +305,7 @@ function App() {
 
       {palette && <Palette onClose={() => setPalette(false)} onNew={() => { setPalette(false); setNewHabit(true); }} />}
       <HabitForm open={newHabit} onClose={() => setNewHabit(false)} />
+      <NavEditor open={editTabs} onClose={() => setEditTabs(false)} />
       <InstallBanner />
       <UpdateBanner />
       <StopwatchBar />

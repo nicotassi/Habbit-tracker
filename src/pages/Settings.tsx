@@ -7,6 +7,7 @@ import { askConfirm, askText, Seg, toast } from '../components/ui';
 import { navigate } from '../router';
 import { changePin, deleteAccount, flush, logout, pull, useCloud } from '../lib/cloud';
 import { InstallCard } from '../components/Install';
+import { NavEditor } from '../components/NavEditor';
 import { applyUpdate, checkForUpdate } from '../lib/update';
 import { disablePush, enablePush, lastPushError, waitForPermission, pushNeedsInstall, pushOnThisDevice, pushSupported, testPush, type EnableResult } from '../lib/push';
 
@@ -16,6 +17,7 @@ const embedded = window.top !== window;
 export function Settings() {
   const { settings, setSettings, replaceAll, reset, habits, moods } = useStore();
   const file = useRef<HTMLInputElement>(null);
+  const [tabsOpen, setTabsOpen] = useState(false);
   const restore = async (d: AppData) => {
     if (await askConfirm('¿Reemplazar tus datos?', { body: 'El backup reemplaza todos los hábitos y registros actuales.', ok: 'Importar' })) { replaceAll(d); toast('Backup importado', '✅'); }
   };
@@ -67,6 +69,12 @@ export function Settings() {
 
         <div className="col" style={{ gap: 16 }}>
           <NotifyCard />
+          <div className="card col" style={{ gap: 10 }}>
+            <h3 className="h3">🧭 Pestañas de abajo</h3>
+            <p className="small muted" style={{ margin: 0 }}>Elegí qué secciones van en la barra de abajo del celular y en qué orden. Las demás quedan en “Más”.</p>
+            <div><button className="btn" onClick={() => setTabsOpen(true)}>✏️ Editar pestañas</button></div>
+            <NavEditor open={tabsOpen} onClose={() => setTabsOpen(false)} />
+          </div>
           <InstallCard />
           <div className="card col" style={{ gap: 10 }}>
             <h3 className="h3">🔄 Versión de la app</h3>

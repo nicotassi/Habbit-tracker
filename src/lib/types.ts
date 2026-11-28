@@ -140,6 +140,8 @@ export interface Settings {
   pushEvening: boolean;
   /** hay al menos un dispositivo con avisos push: todos los dispositivos mantienen la agenda al día */
   pushActive: boolean;
+  /** pestañas de la barra de abajo, en orden (el resto va en "Más") */
+  navTabs?: string[];
 }
 
 /** Arranque y cierre del día (rituales de 30 segundos). */

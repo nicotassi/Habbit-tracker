@@ -1003,3 +1003,19 @@ button.mode-chip { cursor: pointer; }
 .pill.good { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; background: color-mix(in srgb, var(--good) 14%, var(--surface)); color: var(--good); font-weight: 600; }
 
 .perm-help ol { margin: 8px 0 10px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Editor de pestañas */
+.nav-preview { display: flex; gap: 2px; padding: 6px; margin: 4px 0 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); }
+.nav-preview span { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--ink-2); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-preview b { font-size: 18px; font-weight: 400; }
+.nav-edit-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.nav-edit-item { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+.nav-edit-item.off { background: transparent; border-style: dashed; }
+.nav-edit-item .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ne-ico { font-size: 20px; width: 26px; text-align: center; }
+.nav-edit-item .btn[disabled] { opacity: .3; }
+
+/* barra de abajo: entran también los nombres largos que se pueden elegir (Calendario, Objetivos…) */
+.mobile-nav button { padding-left: 1px; padding-right: 1px; }
+.mobile-nav button .lbl { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.2px; }
+@media (max-width: 360px) { .mobile-nav button .lbl { font-size: 10px; letter-spacing: -0.3px; } }
